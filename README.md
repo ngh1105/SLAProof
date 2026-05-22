@@ -34,6 +34,7 @@ and export a signed JSON receipt.
 - [GenLayer Contract Spec](docs/architecture/02-genlayer-contract-spec.md)
 - [Demo Plan](docs/plans/01-demo-plan.md)
 - [Production Roadmap](docs/plans/02-production-roadmap.md)
+- [Implementation Plan](docs/plans/03-implementation-plan.md)
 - [MVP Task Breakdown](docs/tasks/01-mvp-task-breakdown.md)
 - [Production Readiness Checklist](docs/readiness/production-readiness-checklist.md)
 
