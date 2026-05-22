@@ -26,6 +26,24 @@ The MVP is receipt-first. It does not run continuous monitoring and it does not
 move funds. Users create an SLA case, attach evidence, run a GenLayer verdict,
 and export a signed JSON receipt.
 
+## Local Demo
+
+```bash
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000` and use the seeded case queue. The first runnable
+slice uses a deterministic mock verifier so the breach, no-breach,
+inconclusive, and needs-more-evidence receipts are stable during demos.
+
+Quality gate:
+
+```bash
+npm run verify:demo
+npm run test:e2e
+```
+
 ## Documentation Map
 
 - [Product Spec](docs/specs/2026-05-22-slaproof-product-spec.md)
