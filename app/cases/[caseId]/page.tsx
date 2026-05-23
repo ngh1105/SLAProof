@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Clock, FileText, ShieldCheck } from "lucide-react";
 import { getDemoCase } from "@/lib/domain/fixtures";
 import { formatUtcRange, validateSlaCase } from "@/lib/domain/validation";
-import { verifyCaseLocally } from "@/lib/verifier/mock-verifier";
+import { getVerifier, getVerifierReadiness } from "@/lib/verifier";
 
 type CasePageProps = {
   params: Promise<{ caseId: string }>;
@@ -16,7 +16,9 @@ export default async function CasePage({ params }: CasePageProps) {
   if (!slaCase) notFound();
 
   const validation = validateSlaCase(slaCase);
-  const receipt = verifyCaseLocally(slaCase);
+  const verifier = getVerifier();
+  const readiness = getVerifierReadiness();
+  const receipt = (await verifier.verifyCase(slaCase)).receipt;
 
   return (
     <main className="page">
@@ -133,6 +135,12 @@ export default async function CasePage({ params }: CasePageProps) {
             </div>
             <dl className="definition-list">
               <div>
+                <dt>Verifier</dt>
+                <dd>
+                  {readiness.mode} · {readiness.ready ? readiness.networkLabel : "setup required"}
+                </dd>
+              </div>
+              <div>
                 <dt>Validation</dt>
                 <dd>{validation.valid ? "Ready" : validation.errors.join(" ")}</dd>
               </div>
@@ -151,4 +159,3 @@ export default async function CasePage({ params }: CasePageProps) {
     </main>
   );
 }
-

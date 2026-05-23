@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, Clock, FileCheck2, ServerCog } from "lucide-react";
 import { demoCases } from "@/lib/domain/fixtures";
 import { formatUtcRange } from "@/lib/domain/validation";
+import { getVerifierReadiness } from "@/lib/verifier";
 import { verifyCaseLocally } from "@/lib/verifier/mock-verifier";
 import type { VerdictDecision } from "@/lib/domain/types";
 
@@ -13,6 +14,7 @@ const decisionLabels: Record<VerdictDecision, string> = {
 };
 
 export default function Home() {
+  const readiness = getVerifierReadiness();
   const receipts = demoCases.map((slaCase) => verifyCaseLocally(slaCase));
   const breachCount = receipts.filter((receipt) => receipt.decision === "breach").length;
   const readyCount = demoCases.filter((slaCase) => slaCase.status === "ready").length;
@@ -50,10 +52,30 @@ export default function Home() {
           <span>Likely breach</span>
         </div>
         <div className="metric">
-          <strong>UTC</strong>
-          <span>Incident timestamps</span>
+          <strong>{readiness.mode}</strong>
+          <span>{readiness.ready ? readiness.networkLabel : "Verifier setup needed"}</span>
         </div>
       </section>
+
+      {!readiness.ready ? (
+        <section className="panel">
+          <div className="section-header">
+            <div>
+              <h2>Verifier readiness</h2>
+              <p>Mock mode is ready by default. Live GenLayer mode needs deployment env vars.</p>
+            </div>
+            <span className="status needs_more_evidence">setup</span>
+          </div>
+          <div className="definition-list">
+            {readiness.issues.map((issue) => (
+              <div key={issue}>
+                <dt>Issue</dt>
+                <dd>{issue}</dd>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="workspace" id="cases">
         <div className="workspace-header">
@@ -95,4 +117,3 @@ export default function Home() {
     </main>
   );
 }
-

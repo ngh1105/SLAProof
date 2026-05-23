@@ -3,6 +3,7 @@ import { demoCases, getDemoCase } from "@/lib/domain/fixtures";
 import { hashEvidence, hashReceipt } from "@/lib/domain/hash";
 import { formatUtcRange, validateSlaCase } from "@/lib/domain/validation";
 import { exportReceiptJson, exportReceiptMarkdown } from "@/lib/export/receipt-export";
+import { fromContractReceipt, toContractPayload } from "@/lib/genlayer/contract-payload";
 import { inferMockDecision, verifyCaseLocally } from "@/lib/verifier/mock-verifier";
 
 describe("SLAProof domain fixtures", () => {
@@ -48,6 +49,39 @@ describe("SLAProof domain fixtures", () => {
   it("hashes evidence stably", () => {
     expect(hashEvidence("Elevated 5xx errors")).toBe(hashEvidence("Elevated 5xx errors"));
     expect(hashEvidence("Elevated 5xx errors")).not.toBe(hashEvidence("Elevated 4xx errors"));
+  });
+});
+
+describe("contract payload mapper", () => {
+  it("maps camelCase app data to the snake_case contract schema", () => {
+    const payload = toContractPayload(getDemoCase("case-rpc-breach-001")!);
+
+    expect(payload.version).toBe("slaproof.case.v0");
+    expect(payload.case_id).toBe("case-rpc-breach-001");
+    expect(payload.provider_name).toBe("Northstar RPC");
+    expect(payload.incident_window.start_utc).toBe("2026-05-22T10:05:00Z");
+    expect(payload.sla_terms.error_threshold).toContain("5%");
+    expect(payload.evidence[0].submitted_excerpt).toContain("elevated 5xx");
+  });
+
+  it("maps contract receipts back to app receipt shape", () => {
+    const receipt = fromContractReceipt({
+      version: "slaproof.receipt.v0",
+      case_id: "case-rpc-breach-001",
+      decision: "breach",
+      confidence: 88,
+      violated_clauses: ["5% request failures"],
+      evidence_citations: [{ evidence_id: "ev-status", finding: "Provider acknowledged outage." }],
+      validator_reasoning: "Evidence supports a breach.",
+      recommended_next_action: "Escalate.",
+      created_at: "2026-05-22T15:00:00Z",
+      transaction_hash: "0xabc",
+      receipt_hash: "fnv1a:12345678",
+    });
+
+    expect(receipt.caseId).toBe("case-rpc-breach-001");
+    expect(receipt.evidenceCitations[0].evidenceId).toBe("ev-status");
+    expect(receipt.transactionHash).toBe("0xabc");
   });
 });
 

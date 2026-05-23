@@ -2,8 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ClipboardCheck, Download, FileJson2 } from "lucide-react";
 import { getDemoCase } from "@/lib/domain/fixtures";
-import { verifyCaseLocally } from "@/lib/verifier/mock-verifier";
 import { exportReceiptJson, exportReceiptMarkdown } from "@/lib/export/receipt-export";
+import { getVerifier, getVerifierReadiness } from "@/lib/verifier";
 
 type ReceiptPageProps = {
   params: Promise<{ caseId: string }>;
@@ -15,7 +15,10 @@ export default async function ReceiptPage({ params }: ReceiptPageProps) {
 
   if (!slaCase) notFound();
 
-  const receipt = verifyCaseLocally(slaCase);
+  const verifier = getVerifier();
+  const readiness = getVerifierReadiness();
+  const result = await verifier.verifyCase(slaCase);
+  const receipt = result.receipt;
   const markdown = exportReceiptMarkdown(receipt);
   const json = exportReceiptJson(receipt);
 
@@ -46,8 +49,18 @@ export default async function ReceiptPage({ params }: ReceiptPageProps) {
             </div>
             <dl className="definition-list">
               <div>
+                <dt>Verifier</dt>
+                <dd>
+                  {readiness.mode} · {readiness.ready ? readiness.networkLabel : "setup required"}
+                </dd>
+              </div>
+              <div>
                 <dt>Recommended next action</dt>
                 <dd>{receipt.recommendedNextAction}</dd>
+              </div>
+              <div>
+                <dt>Submitted payload</dt>
+                <dd className="mono">{result.submittedPayload.slice(0, 180)}...</dd>
               </div>
               <div>
                 <dt>Receipt hash</dt>
@@ -130,4 +143,3 @@ export default async function ReceiptPage({ params }: ReceiptPageProps) {
     </main>
   );
 }
-
