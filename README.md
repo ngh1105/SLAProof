@@ -50,6 +50,7 @@ npm run test:e2e
 - [Product Design](docs/design/01-product-design.md)
 - [System Architecture](docs/architecture/01-system-architecture.md)
 - [GenLayer Contract Spec](docs/architecture/02-genlayer-contract-spec.md)
+- [Contract README](contracts/slaproof_rpc_verifier/README.md)
 - [Demo Plan](docs/plans/01-demo-plan.md)
 - [Production Roadmap](docs/plans/02-production-roadmap.md)
 - [Implementation Plan](docs/plans/03-implementation-plan.md)
