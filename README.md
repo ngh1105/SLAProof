@@ -56,6 +56,7 @@ npm run test:e2e
 - [Implementation Plan](docs/plans/03-implementation-plan.md)
 - [MVP Task Breakdown](docs/tasks/01-mvp-task-breakdown.md)
 - [Production Readiness Checklist](docs/readiness/production-readiness-checklist.md)
+- [GenLayer Deployment Runbook](docs/runbooks/genlayer-deployment.md)
 
 ## Positioning Guardrails
 
