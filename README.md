@@ -57,6 +57,9 @@ npm run test:e2e
 - [MVP Task Breakdown](docs/tasks/01-mvp-task-breakdown.md)
 - [Production Readiness Checklist](docs/readiness/production-readiness-checklist.md)
 - [GenLayer Deployment Runbook](docs/runbooks/genlayer-deployment.md)
+- [Pilot Operator Guide](docs/runbooks/pilot-operator-guide.md)
+- [Evidence Redaction Checklist](docs/templates/evidence-redaction-checklist.md)
+- [Vendor Escalation Template](docs/templates/vendor-escalation.md)
 
 ## Positioning Guardrails
 
