@@ -1,8 +1,14 @@
 import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 
+const rpcUrl = process.env.NEXT_PUBLIC_GENLAYER_RPC_URL;
 const contractAddress = process.env.NEXT_PUBLIC_SLAPROOF_CONTRACT_ADDRESS;
 const caseId = process.argv[2];
+
+if (!rpcUrl) {
+  console.error("NEXT_PUBLIC_GENLAYER_RPC_URL is required.");
+  process.exit(1);
+}
 
 if (!contractAddress) {
   console.error("NEXT_PUBLIC_SLAPROOF_CONTRACT_ADDRESS is required.");
@@ -19,7 +25,7 @@ if (!caseId) {
   process.exit(1);
 }
 
-const client = createClient({ chain: studionet });
+const client = createClient({ chain: studionet, endpoint: rpcUrl });
 
 const raw = await client.readContract({
   address: contractAddress,
@@ -45,4 +51,3 @@ console.log(
     2,
   ),
 );
-
