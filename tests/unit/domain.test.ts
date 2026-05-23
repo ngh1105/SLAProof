@@ -5,6 +5,7 @@ import { formatUtcRange, validateSlaCase } from "@/lib/domain/validation";
 import { exportReceiptJson, exportReceiptMarkdown } from "@/lib/export/receipt-export";
 import { fromContractReceipt, toContractPayload } from "@/lib/genlayer/contract-payload";
 import { inferMockDecision, verifyCaseLocally } from "@/lib/verifier/mock-verifier";
+import { createGenLayerVerifier } from "@/lib/verifier/genlayer-adapter";
 
 describe("SLAProof domain fixtures", () => {
   it("exposes demo cases for all local verdict states", () => {
@@ -82,6 +83,48 @@ describe("contract payload mapper", () => {
     expect(receipt.caseId).toBe("case-rpc-breach-001");
     expect(receipt.evidenceCitations[0].evidenceId).toBe("ev-status");
     expect(receipt.transactionHash).toBe("0xabc");
+  });
+});
+
+describe("genlayer read adapter", () => {
+  it("maps a get_receipt JSON payload into an app receipt", async () => {
+    const originalEnv = process.env;
+    process.env = {
+      ...originalEnv,
+      NEXT_PUBLIC_GENLAYER_RPC_URL: "https://studio.genlayer.com/api",
+      NEXT_PUBLIC_SLAPROOF_CONTRACT_ADDRESS: "0x1111111111111111111111111111111111111111",
+      NEXT_PUBLIC_SLAPROOF_NETWORK_LABEL: "Studionet",
+    };
+
+    try {
+      const verifier = createGenLayerVerifier(async () => ({
+        async readContract() {
+          return JSON.stringify({
+            version: "slaproof.receipt.v0",
+            case_id: "case-rpc-breach-001",
+            decision: "breach",
+            confidence: 88,
+            violated_clauses: ["5% request failures"],
+            evidence_citations: [
+              { evidence_id: "ev-status", finding: "Provider acknowledged outage." },
+            ],
+            validator_reasoning: "Evidence supports a breach.",
+            recommended_next_action: "Escalate.",
+            created_at: "2026-05-22T15:00:00Z",
+            transaction_hash: "0xabc",
+            receipt_hash: "fnv1a:12345678",
+          });
+        },
+      }));
+
+      const receipt = await verifier.getReceipt("case-rpc-breach-001");
+
+      expect(receipt?.caseId).toBe("case-rpc-breach-001");
+      expect(receipt?.decision).toBe("breach");
+      expect(receipt?.evidenceCitations[0].evidenceId).toBe("ev-status");
+    } finally {
+      process.env = originalEnv;
+    }
   });
 });
 

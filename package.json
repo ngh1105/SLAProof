@@ -16,6 +16,7 @@
     "test:contract": "py -3 -m pytest contracts/slaproof_rpc_verifier",
     "lint:contract": "genvm-lint check contracts/slaproof_rpc_verifier/main.py",
     "lint:contract:ast": "genvm-lint lint contracts/slaproof_rpc_verifier/main.py",
+    "smoke:genlayer:read": "node scripts/smoke-genlayer-read.mjs",
     "test:e2e": "playwright test",
     "verify:demo": "npm run lint && npm run typecheck && npm test && npm run build",
     "readiness:check": "node scripts/readiness-check.mjs"
@@ -32,6 +33,7 @@
   },
   "homepage": "https://github.com/ngh1105/SLAProof#readme",
   "dependencies": {
+    "genlayer-js": "^1.1.8",
     "lucide-react": "^1.16.0",
     "next": "^16.2.6",
     "react": "^19.2.6",

@@ -74,6 +74,13 @@ NEXT_PUBLIC_SLAPROOF_CONTRACT_ADDRESS=0x...
 8. Run a read/write smoke only after the `genlayer-js` submit/read path has
    replaced the current gated adapter stub.
 
+Read smoke after at least one case exists on the deployed contract:
+
+```powershell
+$env:NEXT_PUBLIC_SLAPROOF_CONTRACT_ADDRESS="0x..."
+npm run smoke:genlayer:read -- case_rpc_breach_001
+```
+
 ## Rollback
 
 If a live deployment is wrong:
@@ -86,11 +93,10 @@ If a live deployment is wrong:
 ## Notes For Next Implementation Phase
 
 The app already prepares the `slaproof.case.v0` JSON payload through
-`toContractCaseJson`. The next code phase should replace the gated live adapter
-stub in `lib/verifier/genlayer-adapter.ts` with:
+`toContractCaseJson` and can read `get_receipt(case_id)` through `genlayer-js`.
+The next code phase should add:
 
 - Wallet or demo signer connection.
 - `submit_case(case_id, case_json)` write.
-- Read-after-write polling with `get_receipt(case_id)`.
 - Error categories for missing env, rejected signature, RPC failure, pending
   finalization, and missing contract state.
