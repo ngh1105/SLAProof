@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ArrowRight, Clock, FileText, ShieldCheck } from "lucide-react";
 import { getDemoCase } from "@/lib/domain/fixtures";
 import { formatUtcRange, validateSlaCase } from "@/lib/domain/validation";
+import { verifyCaseLocally } from "@/lib/verifier/mock-verifier";
 import { getVerifier, getVerifierReadiness } from "@/lib/verifier";
 
 type CasePageProps = {
@@ -16,9 +17,18 @@ export default async function CasePage({ params }: CasePageProps) {
   if (!slaCase) notFound();
 
   const validation = validateSlaCase(slaCase);
-  const verifier = getVerifier();
   const readiness = getVerifierReadiness();
-  const receipt = (await verifier.verifyCase(slaCase)).receipt;
+  const previewReceipt = verifyCaseLocally(slaCase);
+
+  async function submitCase() {
+    "use server";
+
+    const submittedCase = getDemoCase(caseId);
+    if (!submittedCase) notFound();
+
+    await getVerifier().verifyCase(submittedCase);
+    redirect(`/receipt/${submittedCase.id}`);
+  }
 
   return (
     <main className="page">
@@ -33,8 +43,14 @@ export default async function CasePage({ params }: CasePageProps) {
           <p className="lede">{slaCase.incidentSummary}</p>
         </div>
         <div className="actions">
-          <Link className="button" href={`/receipt/${slaCase.id}`}>
-            Run demo verifier
+          <form action={submitCase}>
+            <button className="button" type="submit">
+              Submit to verifier
+              <ArrowRight size={16} />
+            </button>
+          </form>
+          <Link className="ghost-button" href={`/receipt/${slaCase.id}`}>
+            View receipt
             <ArrowRight size={16} />
           </Link>
         </div>
@@ -131,7 +147,9 @@ export default async function CasePage({ params }: CasePageProps) {
                 <h2>Readiness</h2>
                 <p>Local validation before GenLayer submission.</p>
               </div>
-              <span className={`status ${receipt.decision}`}>{receipt.decision.replace("_", " ")}</span>
+              <span className={`status ${previewReceipt.decision}`}>
+                {previewReceipt.decision.replace("_", " ")}
+              </span>
             </div>
             <dl className="definition-list">
               <div>
@@ -150,7 +168,7 @@ export default async function CasePage({ params }: CasePageProps) {
               </div>
               <div>
                 <dt>Expected decision</dt>
-                <dd>{receipt.decision.replace("_", " ")}</dd>
+                <dd>{previewReceipt.decision.replace("_", " ")}</dd>
               </div>
             </dl>
           </section>

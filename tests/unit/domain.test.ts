@@ -5,6 +5,8 @@ import { formatUtcRange, validateSlaCase } from "@/lib/domain/validation";
 import { exportReceiptJson, exportReceiptMarkdown } from "@/lib/export/receipt-export";
 import { fromContractReceipt, toContractPayload } from "@/lib/genlayer/contract-payload";
 import { inferMockDecision, verifyCaseLocally } from "@/lib/verifier/mock-verifier";
+import { createGenLayerVerifier } from "@/lib/verifier/genlayer-adapter";
+import { ExecutionResult, TransactionStatus } from "genlayer-js/types";
 
 describe("SLAProof domain fixtures", () => {
   it("exposes demo cases for all local verdict states", () => {
@@ -82,6 +84,270 @@ describe("contract payload mapper", () => {
     expect(receipt.caseId).toBe("case-rpc-breach-001");
     expect(receipt.evidenceCitations[0].evidenceId).toBe("ev-status");
     expect(receipt.transactionHash).toBe("0xabc");
+  });
+});
+
+describe("genlayer read adapter", () => {
+  async function withGenLayerEnv(testFn: () => Promise<void>) {
+    const originalEnv = process.env;
+    process.env = {
+      ...originalEnv,
+      NEXT_PUBLIC_GENLAYER_RPC_URL: "https://studio.genlayer.com/api",
+      NEXT_PUBLIC_SLAPROOF_CONTRACT_ADDRESS: "0x1111111111111111111111111111111111111111",
+      NEXT_PUBLIC_SLAPROOF_NETWORK_LABEL: "Studionet",
+      GENLAYER_PRIVATE_KEY: "",
+      GENLAYER_PRV_KEY: "",
+      GENLAYER_PRIVKEY: "",
+      PRIVATE_KEY: "",
+    };
+
+    try {
+      await testFn();
+    } finally {
+      process.env = originalEnv;
+    }
+  }
+
+  function contractReceiptJson(overrides: Record<string, unknown> = {}) {
+    return JSON.stringify({
+      version: "slaproof.receipt.v0",
+      case_id: "case-rpc-breach-001",
+      decision: "breach",
+      confidence: 88,
+      violated_clauses: ["5% request failures"],
+      evidence_citations: [{ evidence_id: "ev-status", finding: "Provider acknowledged outage." }],
+      validator_reasoning: "Evidence supports a breach.",
+      recommended_next_action: "Escalate.",
+      created_at: "2026-05-22T15:00:00Z",
+      transaction_hash: "0xabc",
+      receipt_hash: "fnv1a:12345678",
+      ...overrides,
+    });
+  }
+
+  it("maps a get_receipt JSON payload into an app receipt", async () => {
+    await withGenLayerEnv(async () => {
+      const seenRpcUrls: string[] = [];
+      const verifier = createGenLayerVerifier(async (rpcUrl) => ({
+        async readContract() {
+          seenRpcUrls.push(rpcUrl);
+          return contractReceiptJson();
+        },
+      }));
+
+      const receipt = await verifier.getReceipt("case-rpc-breach-001");
+
+      expect(receipt?.caseId).toBe("case-rpc-breach-001");
+      expect(receipt?.decision).toBe("breach");
+      expect(receipt?.evidenceCitations[0].evidenceId).toBe("ev-status");
+      expect(seenRpcUrls).toEqual(["https://studio.genlayer.com/api"]);
+    });
+  });
+
+  it("returns an on-chain receipt from verifyCase in read-mode", async () => {
+    await withGenLayerEnv(async () => {
+      const verifier = createGenLayerVerifier(async () => ({
+        async readContract() {
+          return contractReceiptJson();
+        },
+      }));
+
+      const result = await verifier.verifyCase(getDemoCase("case-rpc-breach-001")!);
+
+      expect(result.source).toBe("genlayer");
+      expect(result.receipt.caseId).toBe("case-rpc-breach-001");
+      expect(result.receipt.decision).toBe("breach");
+      expect(result.submittedPayload).toContain('"case_id":"case-rpc-breach-001"');
+    });
+  });
+
+  it("returns a gated read-mode receipt when no on-chain receipt exists", async () => {
+    await withGenLayerEnv(async () => {
+      const verifier = createGenLayerVerifier(async () => ({
+        async readContract() {
+          throw new Error("gen_call failed: receipt not found");
+        },
+      }));
+
+      const result = await verifier.verifyCase(getDemoCase("case-rpc-breach-001")!);
+
+      expect(result.source).toBe("genlayer");
+      expect(result.receipt.caseId).toBe("case-rpc-breach-001");
+      expect(result.receipt.decision).toBe("needs_more_evidence");
+      expect(result.receipt.validatorReasoning).toContain("read-only");
+    });
+  });
+
+  it("submits through GenLayer write mode and reads the finalized receipt back", async () => {
+    await withGenLayerEnv(async () => {
+      const txHash = `0x${"a".repeat(64)}`;
+      const seenWrites: unknown[] = [];
+      const seenWaits: unknown[] = [];
+      const verifier = createGenLayerVerifier({
+        signerFactory: () => `0x${"1".repeat(64)}`,
+        pollIntervalMs: 0,
+        pollRetries: 2,
+        readClientFactory: async () => ({
+          async readContract() {
+            return contractReceiptJson({ transaction_hash: "" });
+          },
+        }),
+        writeClientFactory: async () => ({
+          async readContract() {
+            return null;
+          },
+          async writeContract(args) {
+            seenWrites.push(args);
+            return txHash;
+          },
+          async waitForTransactionReceipt(args) {
+            seenWaits.push(args);
+            return {
+              txExecutionResultName: ExecutionResult.FINISHED_WITH_RETURN,
+              statusName: TransactionStatus.FINALIZED,
+            };
+          },
+        }),
+      });
+
+      const result = await verifier.verifyCase(getDemoCase("case-rpc-breach-001")!);
+
+      expect(result.receipt.decision).toBe("breach");
+      expect(result.receipt.transactionHash).toBe(txHash);
+      expect(seenWrites).toEqual([
+        expect.objectContaining({
+          address: "0x1111111111111111111111111111111111111111",
+          functionName: "submit_case",
+          value: 0n,
+        }),
+      ]);
+      expect(seenWaits).toEqual([expect.objectContaining({ hash: txHash, status: "FINALIZED" })]);
+    });
+  });
+
+  it("stays in read mode when live signer env is missing", async () => {
+    await withGenLayerEnv(async () => {
+      const verifier = createGenLayerVerifier({
+        readClientFactory: async () => ({
+          async readContract() {
+            return contractReceiptJson();
+          },
+        }),
+        writeClientFactory: async () => {
+          throw new Error("write factory should not be called");
+        },
+      });
+
+      const result = await verifier.verifyCase(getDemoCase("case-rpc-breach-001")!);
+
+      expect(result.receipt.transactionHash).toBe("0xabc");
+    });
+  });
+
+  it("uses the first non-empty GenLayer signer env alias for write mode", async () => {
+    await withGenLayerEnv(async () => {
+      process.env.GENLAYER_PRIVATE_KEY = "";
+      process.env.GENLAYER_PRV_KEY = "   ";
+      process.env.GENLAYER_PRIVKEY = `${"2".repeat(64)}`;
+      const txHash = `0x${"d".repeat(64)}`;
+      const seenPrivateKeys: string[] = [];
+      const verifier = createGenLayerVerifier({
+        pollIntervalMs: 0,
+        pollRetries: 1,
+        readClientFactory: async () => ({
+          async readContract() {
+            return contractReceiptJson();
+          },
+        }),
+        writeClientFactory: async (_rpcUrl, privateKey) => {
+          seenPrivateKeys.push(privateKey);
+          return {
+            async readContract() {
+              return null;
+            },
+            async writeContract() {
+              return txHash;
+            },
+            async waitForTransactionReceipt() {
+              return {
+                txExecutionResultName: ExecutionResult.FINISHED_WITH_RETURN,
+                statusName: TransactionStatus.FINALIZED,
+              };
+            },
+          };
+        },
+      });
+
+      await verifier.verifyCase(getDemoCase("case-rpc-breach-001")!);
+
+      expect(seenPrivateKeys).toEqual([`0x${"2".repeat(64)}`]);
+    });
+  });
+
+  it("throws when a finalized GenLayer transaction reports an execution error", async () => {
+    await withGenLayerEnv(async () => {
+      const txHash = `0x${"b".repeat(64)}`;
+      const verifier = createGenLayerVerifier({
+        signerFactory: () => `0x${"1".repeat(64)}`,
+        readClientFactory: async () => ({
+          async readContract() {
+            return contractReceiptJson();
+          },
+        }),
+        writeClientFactory: async () => ({
+          async readContract() {
+            return null;
+          },
+          async writeContract() {
+            return txHash;
+          },
+          async waitForTransactionReceipt() {
+            return {
+              txExecutionResultName: ExecutionResult.FINISHED_WITH_ERROR,
+              statusName: TransactionStatus.FINALIZED,
+            };
+          },
+        }),
+      });
+
+      await expect(verifier.verifyCase(getDemoCase("case-rpc-breach-001")!)).rejects.toThrow(
+        `GenLayer transaction ${txHash} finished with an execution error.`,
+      );
+    });
+  });
+
+  it("throws when write finalizes but receipt read-back never appears", async () => {
+    await withGenLayerEnv(async () => {
+      const txHash = `0x${"c".repeat(64)}`;
+      const verifier = createGenLayerVerifier({
+        signerFactory: () => `0x${"1".repeat(64)}`,
+        pollIntervalMs: 0,
+        pollRetries: 1,
+        readClientFactory: async () => ({
+          async readContract() {
+            throw new Error("gen_call failed: receipt not found");
+          },
+        }),
+        writeClientFactory: async () => ({
+          async readContract() {
+            return null;
+          },
+          async writeContract() {
+            return txHash;
+          },
+          async waitForTransactionReceipt() {
+            return {
+              txExecutionResultName: ExecutionResult.FINISHED_WITH_RETURN,
+              statusName: TransactionStatus.FINALIZED,
+            };
+          },
+        }),
+      });
+
+      await expect(verifier.verifyCase(getDemoCase("case-rpc-breach-001")!)).rejects.toThrow(
+        `GenLayer transaction ${txHash} finalized, but receipt case-rpc-breach-001 is not readable yet.`,
+      );
+    });
   });
 });
 
