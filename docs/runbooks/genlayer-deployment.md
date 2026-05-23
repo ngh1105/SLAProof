@@ -11,10 +11,22 @@ py -3 -m pytest contracts\slaproof_rpc_verifier
 py -3 -m py_compile contracts\slaproof_rpc_verifier\main.py contracts\slaproof_rpc_verifier\evaluator.py
 ```
 
-`genvm-lint` is installed on this Windows machine as an executable, but it exits
-with code 1 and no diagnostics because the backing Python 3.14 runtime is not
-available through the launcher. Fix that local toolchain before treating the
-contract as deploy-ready.
+`genvm-lint` exists in two local Python installs. PATH prefers a stale Python
+3.14 shim that exits without useful diagnostics. The Python 3.12 shim works for
+AST lint with UTF-8 output enabled, but full validation currently fails to load
+the SDK with `HTTP Error 404: Not Found`.
+
+Working AST lint command:
+
+```powershell
+$env:PYTHONIOENCODING='utf-8'
+$env:PYTHONUTF8='1'
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+& 'C:\Users\Admin\AppData\Local\Programs\Python\Python312\Scripts\genvm-lint.exe' lint contracts\slaproof_rpc_verifier\main.py
+```
+
+Do not treat the contract as deploy-ready until full `genvm-lint check` passes
+or the contract is validated in a clean GenLayer SDK environment.
 
 ## Environment Variables
 
@@ -82,4 +94,3 @@ stub in `lib/verifier/genlayer-adapter.ts` with:
 - Read-after-write polling with `get_receipt(case_id)`.
 - Error categories for missing env, rejected signature, RPC failure, pending
   finalization, and missing contract state.
-

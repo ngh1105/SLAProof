@@ -15,6 +15,7 @@
     "test": "vitest run",
     "test:contract": "py -3 -m pytest contracts/slaproof_rpc_verifier",
     "lint:contract": "genvm-lint check contracts/slaproof_rpc_verifier/main.py",
+    "lint:contract:ast": "genvm-lint lint contracts/slaproof_rpc_verifier/main.py",
     "test:e2e": "playwright test",
     "verify:demo": "npm run lint && npm run typecheck && npm test && npm run build",
     "readiness:check": "node scripts/readiness-check.mjs"
