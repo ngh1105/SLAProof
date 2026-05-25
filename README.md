@@ -26,17 +26,40 @@ The MVP is receipt-first. It does not run continuous monitoring and it does not
 move funds. Users create an SLA case, attach evidence, run a GenLayer verdict,
 and export a signed JSON receipt.
 
+## Local Demo
+
+```bash
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000` and use the seeded case queue. The first runnable
+slice uses a deterministic mock verifier so the breach, no-breach,
+inconclusive, and needs-more-evidence receipts are stable during demos.
+
+Quality gate:
+
+```bash
+npm run verify:demo
+npm run test:e2e
+```
+
 ## Documentation Map
 
 - [Product Spec](docs/specs/2026-05-22-slaproof-product-spec.md)
 - [Product Design](docs/design/01-product-design.md)
 - [System Architecture](docs/architecture/01-system-architecture.md)
 - [GenLayer Contract Spec](docs/architecture/02-genlayer-contract-spec.md)
+- [Contract README](contracts/slaproof_rpc_verifier/README.md)
 - [Demo Plan](docs/plans/01-demo-plan.md)
 - [Production Roadmap](docs/plans/02-production-roadmap.md)
 - [Implementation Plan](docs/plans/03-implementation-plan.md)
 - [MVP Task Breakdown](docs/tasks/01-mvp-task-breakdown.md)
 - [Production Readiness Checklist](docs/readiness/production-readiness-checklist.md)
+- [GenLayer Deployment Runbook](docs/runbooks/genlayer-deployment.md)
+- [Pilot Operator Guide](docs/runbooks/pilot-operator-guide.md)
+- [Evidence Redaction Checklist](docs/templates/evidence-redaction-checklist.md)
+- [Vendor Escalation Template](docs/templates/vendor-escalation.md)
 
 ## Positioning Guardrails
 

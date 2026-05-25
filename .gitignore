@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+coverage/
+playwright-report/
+test-results/
+.env
+.env.local
+.vercel/
+*.log
+tsconfig.tsbuildinfo
+__pycache__/
+*.pyc
+lib/storage/db.json
+.data/
