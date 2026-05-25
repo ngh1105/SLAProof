@@ -11,3 +11,4 @@ test-results/
 tsconfig.tsbuildinfo
 __pycache__/
 *.pyc
+lib/storage/db.json

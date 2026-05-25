@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Trash2, ShieldAlert, FilePlus2, Sparkles } from "lucide-react";
 import { hashEvidence } from "@/lib/domain/hash";
 import { validateSlaCase } from "@/lib/domain/validation";
@@ -33,6 +34,7 @@ function scanForSensitiveData(text: string): string[] {
 }
 
 export default function NewCasePage() {
+  const router = useRouter();
   // Case Metadata
   const [title, setTitle] = useState("");
   const [providerName, setProviderName] = useState("");
@@ -73,7 +75,7 @@ export default function NewCasePage() {
     setEvidenceList([
       ...evidenceList,
       {
-        id: `ev-${nextNum}-${Math.random().toString(36).substr(2, 4)}`,
+        id: `ev-${nextNum}-${Math.random().toString(36).slice(2, 6)}`,
         type: "monitoring_summary",
         title: "",
         sourceUrl: "",
@@ -188,9 +190,18 @@ export default function NewCasePage() {
     setIsSubmitting(true);
     try {
       // Call Server Action to save
-      await createCaseAction(slaCase);
-    } catch {
-      setErrors(["Failed to save case. Try again."]);
+      const result = await createCaseAction(slaCase);
+      if (!result.ok) {
+        setErrors(result.errors);
+        setIsSubmitting(false);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+      router.push("/");
+    } catch (err) {
+      console.error("Case submit failed:", err);
+      const message = err instanceof Error ? err.message : "Unknown error.";
+      setErrors([`Failed to save case: ${message}`]);
       setIsSubmitting(false);
     }
   };

@@ -192,12 +192,13 @@ function ensureDbFile() {
 
 export function getDemoCases(): SlaCase[] {
   ensureDbFile();
+  const data = fs.readFileSync(DB_PATH, "utf-8");
   try {
-    const data = fs.readFileSync(DB_PATH, "utf-8");
     return JSON.parse(data) as SlaCase[];
   } catch (error) {
-    console.error("Failed to read SLA cases database:", error);
-    return initialDemoCases;
+    throw new Error(
+      `Failed to parse SLA cases database at ${DB_PATH}: ${(error as Error).message}`,
+    );
   }
 }
 
@@ -208,16 +209,12 @@ export function getDemoCase(caseId: string): SlaCase | undefined {
 
 export function saveDemoCase(slaCase: SlaCase): void {
   ensureDbFile();
-  try {
-    const cases = getDemoCases();
-    const index = cases.findIndex((c) => c.id === slaCase.id);
-    if (index >= 0) {
-      cases[index] = slaCase;
-    } else {
-      cases.push(slaCase);
-    }
-    fs.writeFileSync(DB_PATH, JSON.stringify(cases, null, 2), "utf-8");
-  } catch (error) {
-    console.error("Failed to save SLA case to database:", error);
+  const cases = getDemoCases();
+  const index = cases.findIndex((c) => c.id === slaCase.id);
+  if (index >= 0) {
+    cases[index] = slaCase;
+  } else {
+    cases.push(slaCase);
   }
+  fs.writeFileSync(DB_PATH, JSON.stringify(cases, null, 2), "utf-8");
 }
