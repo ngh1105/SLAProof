@@ -6,6 +6,7 @@ import { exportReceiptJson, exportReceiptMarkdown } from "@/lib/export/receipt-e
 import { toContractCaseJson } from "@/lib/genlayer/contract-payload";
 import { verifyCaseLocally } from "@/lib/verifier/mock-verifier";
 import { getVerifier, getVerifierReadiness } from "@/lib/verifier";
+import { RefreshReceiptButton } from "./_components/refresh-button";
 
 type ReceiptPageProps = {
   params: Promise<{ caseId: string }>;
@@ -112,7 +113,12 @@ export default async function ReceiptPage({ params }: ReceiptPageProps) {
                   {hasStoredReceipt ? receipt.transactionHash : "Pending explicit submission"}
                 </dd>
               </div>
+              <div>
+                <dt>Contract</dt>
+                <dd className="mono">{readiness.contractAddress ?? "(unset)"}</dd>
+              </div>
             </dl>
+            <RefreshReceiptButton />
           </section>
 
           <section className="panel">
