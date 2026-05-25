@@ -11,6 +11,9 @@ export default defineConfig({
   webServer: {
     command: "npm run dev -- --hostname 127.0.0.1 --port 3307",
     url: "http://127.0.0.1:3307",
+    env: {
+      NEXT_PUBLIC_SLAPROOF_VERIFIER: "mock",
+    },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

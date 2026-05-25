@@ -154,7 +154,12 @@ async function readReceipt(
 
     return fromContractReceipt(JSON.parse(raw) as ContractReceipt);
   } catch (error) {
-    if (error instanceof Error && /receipt not found/i.test(error.message)) {
+    if (
+      error instanceof Error &&
+      (/receipt not found/i.test(error.message) ||
+        /execution failed/i.test(error.message) ||
+        /invalid parameters/i.test(error.message))
+    ) {
       return null;
     }
 
