@@ -38,12 +38,8 @@ export function useGenLayerWallet(): UseGenLayerWalletReturn {
   const [account, setAccount] = useState<`0x${string}` | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
   const [error, setError] = useState<WalletError | null>(null);
-  const [provider, setProvider] = useState<Eip1193Provider | null>(null);
-
-  // Provider detection only runs on the client.
-  useEffect(() => {
-    setProvider(detectProvider());
-  }, []);
+  // Lazy init: detectProvider returns null on the server, real provider on the client.
+  const [provider] = useState<Eip1193Provider | null>(() => detectProvider());
 
   // Sync to provider events (account/chain changes).
   useEffect(() => {

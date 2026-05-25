@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Activity, FilePlus2 } from "lucide-react";
 import "./globals.css";
+import { WalletButton } from "./_components/wallet-button";
 
 export const metadata: Metadata = {
   title: "SLAProof",
@@ -38,6 +39,7 @@ export default function RootLayout({
                 <FilePlus2 size={16} />
                 New case
               </Link>
+              <WalletButton />
             </nav>
           </header>
           {children}
