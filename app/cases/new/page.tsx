@@ -8,6 +8,30 @@ import { validateSlaCase } from "@/lib/domain/validation";
 import { createCaseAction } from "./actions";
 import type { SlaCase, EvidenceItem, EvidenceType } from "@/lib/domain/types";
 
+// Scans text for sensitive patterns (Private keys, credentials, API Keys)
+function scanForSensitiveData(text: string): string[] {
+  const warnings: string[] = [];
+  if (!text) return warnings;
+
+  // 64-char private key pattern
+  if (/(?:^|\s|["'])(?:0x)?[0-9a-fA-F]{64}(?:\s|["']|$)/.test(text)) {
+    warnings.push("Potential 32-byte Private Key detected! Do NOT submit private keys to the blockchain.");
+  }
+  // Stripe Secret Key pattern
+  if (/sk_(?:live|test)_[0-9a-zA-Z]{24}/.test(text)) {
+    warnings.push("Stripe Secret API Key detected! Redact credentials before submission.");
+  }
+  // Google API Key pattern
+  if (/AIzaSy[0-9a-zA-Z-_]{33}/.test(text)) {
+    warnings.push("Google API Key detected! Redact credentials before submission.");
+  }
+  // Authorization Headers
+  if (/authorization:\s*(?:bearer|basic)\s+[0-9a-zA-Z+/=_-]+/i.test(text)) {
+    warnings.push("Potential Authorization Token detected! Redact headers before submission.");
+  }
+  return warnings;
+}
+
 export default function NewCasePage() {
   // Case Metadata
   const [title, setTitle] = useState("");
@@ -135,6 +159,22 @@ export default function NewCasePage() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+
+    // Scan all evidence excerpts for sensitive credentials
+    const allSensitiveErrors: string[] = [];
+    for (const item of computedEvidence) {
+      const itemErrors = scanForSensitiveData(item.submittedExcerpt);
+      if (itemErrors.length > 0) {
+        allSensitiveErrors.push(...itemErrors);
+      }
+    }
+    if (allSensitiveErrors.length > 0) {
+      setErrors([
+        "Intake blocked due to sensitive credentials: " + allSensitiveErrors.join(" | "),
+      ]);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
 
     // Client-side domain validation
     const validation = validateSlaCase(slaCase);
@@ -385,6 +425,13 @@ export default function NewCasePage() {
                         required
                       />
                     </div>
+
+                    {scanForSensitiveData(item.submittedExcerpt).map((warn) => (
+                      <div key={warn} style={{ color: "var(--danger)", fontSize: "12px", fontWeight: "bold", marginTop: "4px", display: "flex", alignItems: "center", gap: "6px" }}>
+                        <ShieldAlert size={14} />
+                        {warn}
+                      </div>
+                    ))}
 
                     <div style={{ marginTop: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span className="mono" style={{ padding: "4px 8px", background: "rgba(0,0,0,0.4)" }}>
