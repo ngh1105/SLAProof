@@ -3,8 +3,9 @@ import path from "node:path";
 import type { SlaCase } from "@/lib/domain/types";
 import { hashEvidence } from "@/lib/domain/hash";
 
-const DB_DIR = path.join(process.cwd(), "lib", "storage");
+const DB_DIR = path.join(process.cwd(), ".data");
 const DB_PATH = path.join(DB_DIR, "db.json");
+const LEGACY_DB_PATH = path.join(process.cwd(), "lib", "storage", "db.json");
 
 const initialDemoCases: SlaCase[] = [
   {
@@ -186,8 +187,48 @@ function ensureDbFile() {
     fs.mkdirSync(DB_DIR, { recursive: true });
   }
   if (!fs.existsSync(DB_PATH)) {
-    fs.writeFileSync(DB_PATH, JSON.stringify(initialDemoCases, null, 2), "utf-8");
+    if (fs.existsSync(LEGACY_DB_PATH)) {
+      fs.copyFileSync(LEGACY_DB_PATH, DB_PATH);
+    } else {
+      fs.writeFileSync(DB_PATH, JSON.stringify(initialDemoCases, null, 2), "utf-8");
+    }
   }
+}
+
+function atomicWrite(filePath: string, contents: string): void {
+  const tmpPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
+  fs.writeFileSync(tmpPath, contents, "utf-8");
+  fs.renameSync(tmpPath, filePath);
+}
+
+const lockFile = `${DB_PATH}.lock`;
+const LOCK_TIMEOUT_MS = 5_000;
+const LOCK_RETRY_MS = 25;
+
+function acquireLock(): void {
+  const deadline = Date.now() + LOCK_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    try {
+      const fd = fs.openSync(lockFile, "wx");
+      fs.closeSync(fd);
+      return;
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code !== "EEXIST") throw err;
+      const stat = fs.statSync(lockFile, { throwIfNoEntry: false });
+      if (stat && Date.now() - stat.mtimeMs > LOCK_TIMEOUT_MS * 2) {
+        try { fs.unlinkSync(lockFile); } catch { /* race; retry */ }
+        continue;
+      }
+      const wakeup = Date.now() + LOCK_RETRY_MS;
+      while (Date.now() < wakeup) { /* tight spin; node has no sync sleep */ }
+    }
+  }
+  throw new Error(`Failed to acquire DB lock at ${lockFile} within ${LOCK_TIMEOUT_MS}ms`);
+}
+
+function releaseLock(): void {
+  try { fs.unlinkSync(lockFile); } catch { /* already gone */ }
 }
 
 export function getDemoCases(): SlaCase[] {
@@ -209,12 +250,17 @@ export function getDemoCase(caseId: string): SlaCase | undefined {
 
 export function saveDemoCase(slaCase: SlaCase): void {
   ensureDbFile();
-  const cases = getDemoCases();
-  const index = cases.findIndex((c) => c.id === slaCase.id);
-  if (index >= 0) {
-    cases[index] = slaCase;
-  } else {
-    cases.push(slaCase);
+  acquireLock();
+  try {
+    const cases = getDemoCases();
+    const index = cases.findIndex((c) => c.id === slaCase.id);
+    if (index >= 0) {
+      cases[index] = slaCase;
+    } else {
+      cases.push(slaCase);
+    }
+    atomicWrite(DB_PATH, JSON.stringify(cases, null, 2));
+  } finally {
+    releaseLock();
   }
-  fs.writeFileSync(DB_PATH, JSON.stringify(cases, null, 2), "utf-8");
 }

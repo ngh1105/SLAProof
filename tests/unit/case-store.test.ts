@@ -14,7 +14,7 @@ async function freshImport() {
 beforeEach(() => {
   originalCwd = process.cwd();
   tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "slaproof-store-"));
-  fs.mkdirSync(path.join(tmpRoot, "lib", "storage"), { recursive: true });
+  fs.mkdirSync(path.join(tmpRoot, ".data"), { recursive: true });
   process.chdir(tmpRoot);
 });
 
@@ -56,7 +56,7 @@ describe("case-store getDemoCases", () => {
     const store = await freshImport();
     store.getDemoCases(); // ensures the file exists with valid seed data
 
-    const dbPath = path.join(tmpRoot, "lib", "storage", "db.json");
+    const dbPath = path.join(tmpRoot, ".data", "db.json");
     fs.writeFileSync(dbPath, "{ this is not valid json", "utf-8");
 
     const fresh = await freshImport();
@@ -68,7 +68,7 @@ describe("case-store getDemoCases", () => {
     const seed = store.getDemoCases()[0];
     store.saveDemoCase({ ...seed, id: "user-case-001", title: "User typed this" });
 
-    const dbPath = path.join(tmpRoot, "lib", "storage", "db.json");
+    const dbPath = path.join(tmpRoot, ".data", "db.json");
     fs.writeFileSync(dbPath, "broken", "utf-8");
 
     const fresh = await freshImport();
