@@ -5,7 +5,14 @@ import {
   toContractCaseJson,
   type ContractReceipt,
 } from "@/lib/genlayer/contract-payload";
-import type { SlaVerifier, VerifierReadiness, VerifyResult } from "@/lib/verifier/types";
+import {
+  VerifierError,
+  type SlaVerifier,
+  type SubmitCaseInput,
+  type SubmitCaseResult,
+  type VerifierReadiness,
+  type VerifyResult,
+} from "@/lib/verifier/types";
 import { ExecutionResult, TransactionStatus } from "genlayer-js/types";
 
 type GenLayerReadClient = {
@@ -204,6 +211,19 @@ function attachTransactionHash(receipt: Receipt, txHash: `0x${string}`): Receipt
   };
 }
 
+function mapWriteError(err: unknown): VerifierError {
+  if (err instanceof VerifierError) return err;
+  if (err && typeof err === "object") {
+    const code = (err as { code?: unknown }).code;
+    const msg = (err as Error).message ?? "";
+    if (code === 4001 || /reject|denied|cancell?ed/i.test(msg)) {
+      return new VerifierError("USER_REJECTED", "Submission cancelled.", err);
+    }
+  }
+  const msg = err instanceof Error ? err.message : String(err);
+  return new VerifierError("RPC_FAILED", `Network or RPC error: ${msg}`, err);
+}
+
 async function pollReceipt(
   caseId: string,
   readiness: VerifierReadiness,
@@ -330,6 +350,70 @@ export function createGenLayerVerifier(
       }
 
       return readReceipt(caseId, readiness, readClientFactory);
+    },
+    async submitCase(input: SubmitCaseInput): Promise<SubmitCaseResult> {
+      const readiness = getReadiness();
+      if (!readiness.ready) {
+        throw new VerifierError("RPC_FAILED", readiness.issues.join(" "));
+      }
+      const client = input.walletClient as {
+        writeContract(args: {
+          address: `0x${string}`;
+          functionName: string;
+          args?: unknown[];
+          value: bigint;
+        }): Promise<unknown>;
+      };
+      const submittedPayload = toContractCaseJson(input.slaCase);
+      try {
+        const raw = await client.writeContract({
+          address: getContractAddress(readiness),
+          functionName: "submit_case",
+          args: [input.slaCase.id, submittedPayload],
+          value: 0n,
+        });
+        return { txHash: normalizeTransactionHash(raw) };
+      } catch (err) {
+        throw mapWriteError(err);
+      }
+    },
+    async waitForFinalization(txHash: `0x${string}`): Promise<void> {
+      const readiness = getReadiness();
+      if (!readiness.ready) {
+        throw new VerifierError("RPC_FAILED", readiness.issues.join(" "));
+      }
+      const privateKey = signerFactory();
+      let client: { waitForTransactionReceipt: GenLayerWriteClient["waitForTransactionReceipt"] };
+      try {
+        client = privateKey
+          ? await writeClientFactory(readiness.rpcUrl!, privateKey)
+          : ((await readClientFactory(readiness.rpcUrl!)) as unknown as {
+              waitForTransactionReceipt: GenLayerWriteClient["waitForTransactionReceipt"];
+            });
+      } catch (err) {
+        throw new VerifierError("RPC_FAILED", "Failed to connect to GenLayer.", err);
+      }
+      let receipt;
+      try {
+        receipt = await client.waitForTransactionReceipt({
+          hash: txHash,
+          status: TransactionStatus.FINALIZED,
+          interval: pollIntervalMs,
+          retries: pollRetries,
+        });
+      } catch (err) {
+        throw new VerifierError("RPC_FAILED", "Waiting for transaction failed.", err);
+      }
+      const execName: unknown = receipt.txExecutionResultName;
+      if (
+        execName === ExecutionResult.FINISHED_WITH_ERROR ||
+        (typeof execName === "string" && execName !== "Success")
+      ) {
+        throw new VerifierError(
+          "EXECUTION_FAILED",
+          `Contract execution failed (${String(execName ?? "Unknown")}).`,
+        );
+      }
     },
   };
 }
