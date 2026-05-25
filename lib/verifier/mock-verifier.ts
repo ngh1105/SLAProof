@@ -43,7 +43,7 @@ const decisionCopy: Record<
 export function inferMockDecision(slaCase: SlaCase): VerdictDecision {
   const validation = validateSlaCase(slaCase);
 
-  if (!validation.valid || slaCase.evidence.length < 2) {
+  if (!validation.valid) {
     return "needs_more_evidence";
   }
 
@@ -55,12 +55,24 @@ export function inferMockDecision(slaCase: SlaCase): VerdictDecision {
     .join(" ")
     .toLowerCase();
 
-  if (text.includes("18.6%") || text.includes("elevated 5xx")) {
+  if (
+    text.includes("18.6%") ||
+    text.includes("elevated 5xx") ||
+    text.includes("sustained 5xx")
+  ) {
     return "breach";
   }
 
-  if (text.includes("under 3%") || text.includes("below")) {
+  if (
+    text.includes("under 3%") ||
+    text.includes("below the provider") ||
+    text.includes("below threshold")
+  ) {
     return "no_breach";
+  }
+
+  if (slaCase.evidence.length < 2) {
+    return "needs_more_evidence";
   }
 
   return "inconclusive";

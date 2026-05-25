@@ -52,6 +52,10 @@ describe("SLAProof domain fixtures", () => {
     expect(hashEvidence("Elevated 5xx errors")).toBe(hashEvidence("Elevated 5xx errors"));
     expect(hashEvidence("Elevated 5xx errors")).not.toBe(hashEvidence("Elevated 4xx errors"));
   });
+
+  it("hashes non-BMP Unicode characters (emojis) identically to Python ord()", () => {
+    expect(hashEvidence("🛑")).toBe("fnv1a:554f907c");
+  });
 });
 
 describe("contract payload mapper", () => {
