@@ -4,7 +4,8 @@ import { ArrowLeft, ArrowRight, Clock, FileText, ShieldCheck } from "lucide-reac
 import { getDemoCase } from "@/lib/domain/fixtures";
 import { formatUtcRange, validateSlaCase } from "@/lib/domain/validation";
 import { verifyCaseLocally } from "@/lib/verifier/mock-verifier";
-import { getVerifier, getVerifierReadiness } from "@/lib/verifier";
+import { getVerifier, getVerifierMode, getVerifierReadiness } from "@/lib/verifier";
+import { SubmitPanel } from "./_components/submit-panel";
 
 type CasePageProps = {
   params: Promise<{ caseId: string }>;
@@ -43,12 +44,14 @@ export default async function CasePage({ params }: CasePageProps) {
           <p className="lede">{slaCase.incidentSummary}</p>
         </div>
         <div className="actions">
-          <form action={submitCase}>
-            <button className="button" type="submit">
-              Submit to verifier
-              <ArrowRight size={16} />
-            </button>
-          </form>
+          {getVerifierMode() === "genlayer" ? null : (
+            <form action={submitCase}>
+              <button className="button" type="submit">
+                Submit to verifier
+                <ArrowRight size={16} />
+              </button>
+            </form>
+          )}
           <Link className="ghost-button" href={`/receipt/${slaCase.id}`}>
             View receipt
             <ArrowRight size={16} />
@@ -174,6 +177,7 @@ export default async function CasePage({ params }: CasePageProps) {
           </section>
         </aside>
       </section>
+      {getVerifierMode() === "genlayer" ? <SubmitPanel slaCase={slaCase} /> : null}
     </main>
   );
 }
