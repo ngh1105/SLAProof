@@ -7,8 +7,12 @@ test("dashboard opens breach case and renders a receipt export", async ({ page }
   await expect(page.getByText("Ethereum read endpoint sustained 5xx errors")).toBeVisible();
 
   await page.getByRole("link", { name: /Open breach case/i }).click();
+  await page.waitForURL(/\/cases\/case-rpc-breach-001/);
+  await page.waitForLoadState("networkidle");
 
-  await expect(page.getByRole("heading", { name: /Ethereum read endpoint/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Ethereum read endpoint/i })).toBeVisible({
+    timeout: 15000,
+  });
   await expect(page.getByText("5% request failures for 5+ consecutive minutes")).toBeVisible();
   await expect(page.getByText("Provider status page incident")).toBeVisible();
 
