@@ -13,6 +13,7 @@ import {
   type VerifierReadiness,
   type VerifyResult,
 } from "@/lib/verifier/types";
+import { increment, observe } from "@/lib/observability/metrics";
 import { ExecutionResult, TransactionStatus } from "genlayer-js/types";
 
 type GenLayerReadClient = {
@@ -352,8 +353,10 @@ export function createGenLayerVerifier(
       return readReceipt(caseId, readiness, readClientFactory);
     },
     async submitCase(input: SubmitCaseInput): Promise<SubmitCaseResult> {
+      const startMs = Date.now();
       const readiness = getReadiness();
       if (!readiness.ready) {
+        increment("verifier_submit_not_ready");
         throw new VerifierError("RPC_FAILED", readiness.issues.join(" "));
       }
       const client = input.walletClient as {
@@ -372,14 +375,21 @@ export function createGenLayerVerifier(
           args: [input.slaCase.id, submittedPayload],
           value: 0n,
         });
-        return { txHash: normalizeTransactionHash(raw) };
+        const txHash = normalizeTransactionHash(raw);
+        increment("verifier_submit_ok");
+        observe("verifier_submit_ms", Date.now() - startMs);
+        return { txHash };
       } catch (err) {
-        throw mapWriteError(err);
+        const mapped = mapWriteError(err);
+        increment(`verifier_submit_${mapped.code.toLowerCase()}`);
+        throw mapped;
       }
     },
     async waitForFinalization(txHash: `0x${string}`): Promise<void> {
+      const startMs = Date.now();
       const readiness = getReadiness();
       if (!readiness.ready) {
+        increment("verifier_wait_not_ready");
         throw new VerifierError("RPC_FAILED", readiness.issues.join(" "));
       }
       const privateKey = signerFactory();
@@ -402,6 +412,7 @@ export function createGenLayerVerifier(
           retries: pollRetries,
         });
       } catch (err) {
+        increment("verifier_wait_rpc_failed");
         throw new VerifierError("RPC_FAILED", "Waiting for transaction failed.", err);
       }
       const execName: unknown = receipt.txExecutionResultName;
@@ -409,11 +420,14 @@ export function createGenLayerVerifier(
         execName === ExecutionResult.FINISHED_WITH_ERROR ||
         (typeof execName === "string" && execName !== "Success")
       ) {
+        increment("verifier_wait_execution_failed");
         throw new VerifierError(
           "EXECUTION_FAILED",
           `Contract execution failed (${String(execName ?? "Unknown")}).`,
         );
       }
+      increment("verifier_wait_ok");
+      observe("verifier_wait_ms", Date.now() - startMs);
     },
   };
 }
