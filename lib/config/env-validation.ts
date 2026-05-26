@@ -14,7 +14,9 @@ export type EnvValidationResult = {
 const HEX_ADDRESS = /^0x[0-9a-fA-F]{40}$/;
 const URL_PATTERN = /^https?:\/\/[^\s]+$/i;
 
-export function validateEnv(env: NodeJS.ProcessEnv = process.env): EnvValidationResult {
+export type EnvSource = Record<string, string | undefined>;
+
+export function validateEnv(env: EnvSource = process.env): EnvValidationResult {
   const issues: EnvIssue[] = [];
   const isProd = env.NODE_ENV === "production";
 
@@ -41,7 +43,7 @@ export function validateEnv(env: NodeJS.ProcessEnv = process.env): EnvValidation
 }
 
 function requireString(
-  env: NodeJS.ProcessEnv,
+  env: EnvSource,
   key: string,
   issues: EnvIssue[],
   pattern?: RegExp,
@@ -57,7 +59,7 @@ function requireString(
   }
 }
 
-function requireNumber(env: NodeJS.ProcessEnv, key: string, issues: EnvIssue[]): void {
+function requireNumber(env: EnvSource, key: string, issues: EnvIssue[]): void {
   const value = env[key];
   if (!value) {
     issues.push({ key, reason: "is required", level: "error" });

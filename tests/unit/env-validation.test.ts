@@ -3,7 +3,7 @@ import { validateEnv } from "@/lib/config/env-validation";
 
 describe("validateEnv", () => {
   it("ok when verifier=mock and no other vars", () => {
-    const result = validateEnv({ NEXT_PUBLIC_SLAPROOF_VERIFIER: "mock" } as NodeJS.ProcessEnv);
+    const result = validateEnv({ NEXT_PUBLIC_SLAPROOF_VERIFIER: "mock" });
     expect(result.ok).toBe(true);
   });
 
@@ -14,7 +14,7 @@ describe("validateEnv", () => {
       NEXT_PUBLIC_GENLAYER_RPC_URL: "https://studio.genlayer.com/api",
       NEXT_PUBLIC_SLAPROOF_NETWORK_LABEL: "Studionet",
       NEXT_PUBLIC_SLAPROOF_CHAIN_ID: "61999",
-    } as NodeJS.ProcessEnv);
+    });
     expect(result.ok).toBe(true);
     expect(result.issues).toEqual([]);
   });
@@ -26,7 +26,7 @@ describe("validateEnv", () => {
       NEXT_PUBLIC_GENLAYER_RPC_URL: "https://studio.genlayer.com/api",
       NEXT_PUBLIC_SLAPROOF_NETWORK_LABEL: "Studionet",
       NEXT_PUBLIC_SLAPROOF_CHAIN_ID: "61999",
-    } as NodeJS.ProcessEnv);
+    });
     expect(result.ok).toBe(false);
     expect(result.issues.find((i) => i.key === "NEXT_PUBLIC_SLAPROOF_CONTRACT_ADDRESS")).toBeDefined();
   });
@@ -38,7 +38,7 @@ describe("validateEnv", () => {
       NEXT_PUBLIC_GENLAYER_RPC_URL: "https://studio.genlayer.com/api",
       NEXT_PUBLIC_SLAPROOF_NETWORK_LABEL: "Studionet",
       NEXT_PUBLIC_SLAPROOF_CHAIN_ID: "abc",
-    } as NodeJS.ProcessEnv);
+    });
     expect(result.ok).toBe(false);
     expect(result.issues.find((i) => i.key === "NEXT_PUBLIC_SLAPROOF_CHAIN_ID")?.reason).toMatch(/numeric/);
   });
@@ -47,7 +47,7 @@ describe("validateEnv", () => {
     const result = validateEnv({
       NODE_ENV: "production",
       NEXT_PUBLIC_SLAPROOF_VERIFIER: "mock",
-    } as NodeJS.ProcessEnv);
+    });
     expect(result.ok).toBe(false);
     expect(result.issues.find((i) => i.key === "PILOT_TOKEN")).toBeDefined();
   });
@@ -57,7 +57,7 @@ describe("validateEnv", () => {
       NODE_ENV: "development",
       NEXT_PUBLIC_SLAPROOF_VERIFIER: "mock",
       PILOT_TOKEN: "short",
-    } as NodeJS.ProcessEnv);
+    });
     expect(result.ok).toBe(true);
     expect(result.issues[0]?.level).toBe("warn");
   });
