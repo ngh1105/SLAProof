@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/ngh1105/SLAProof/security/advisories/new
+    about: Report security issues privately. Do not file a public issue.
+  - name: Pilot operator question
+    url: https://github.com/ngh1105/SLAProof/blob/master/docs/runbooks/pilot-operator-guide.md
+    about: How-to questions for pilot operators are documented in the runbook.

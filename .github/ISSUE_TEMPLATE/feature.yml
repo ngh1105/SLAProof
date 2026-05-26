@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest a new capability for SLAProof.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the user need, not the solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+      description: Optional. Sketch the design if you have one.
+
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Roadmap phase
+      description: Which phase from docs/plans/02-production-roadmap.md does this belong to?
+      options:
+        - Phase 2 (GenLayer Live MVP)
+        - Phase 3 (Pilot readiness)
+        - Phase 4 (Production hardening)
+        - Phase 5 (Expansion)
+        - Unsure
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

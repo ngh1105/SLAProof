@@ -1,0 +1,49 @@
+name: Bug report
+description: Something is broken or not behaving as expected.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One sentence describing the problem.
+      placeholder: "Submit button does X instead of Y on /cases/[caseId]"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open /cases/case-rpc-breach-001 in mock mode
+        2. Click Submit
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: "Node 22.x, Chrome 125, Windows 11, NEXT_PUBLIC_SLAPROOF_VERIFIER=mock"
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Logs / screenshots
+      description: Paste relevant log lines from /api/health, /api/metrics, or browser console.
