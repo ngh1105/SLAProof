@@ -19,6 +19,8 @@
     "smoke:genlayer:read": "node scripts/smoke-genlayer-read.mjs",
     "smoke:genlayer:write": "node scripts/smoke-genlayer-write.mjs",
     "audit:rotate": "node scripts/rotate-audit-log.mjs",
+    "data:backup": "node scripts/backup-data.mjs",
+    "data:restore": "node scripts/restore-data.mjs",
     "test:e2e": "playwright test",
     "verify:demo": "npm run lint && npm run typecheck && npm test && npm run build",
     "readiness:check": "node scripts/readiness-check.mjs"
