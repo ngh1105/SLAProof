@@ -1,9 +1,11 @@
 name: CodeQL
 
+# Code scanning must be enabled in repository Settings -> Code security
+# before this workflow can succeed. Until then it runs only on manual
+# dispatch so PRs are not gated on a feature the maintainer hasn't
+# turned on yet.
 on:
-  push:
-    branches: [master]
-  pull_request:
+  workflow_dispatch:
   schedule:
     - cron: "0 9 * * 1"
 
