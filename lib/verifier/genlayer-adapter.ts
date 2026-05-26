@@ -344,13 +344,23 @@ export function createGenLayerVerifier(
       };
     },
     async getReceipt(caseId: string): Promise<Receipt | null> {
+      const startMs = Date.now();
       const readiness = getReadiness();
 
       if (!readiness.ready) {
+        increment("verifier_get_receipt_not_ready");
         return null;
       }
 
-      return readReceipt(caseId, readiness, readClientFactory);
+      try {
+        const result = await readReceipt(caseId, readiness, readClientFactory);
+        increment(result ? "verifier_get_receipt_ok" : "verifier_get_receipt_missing");
+        observe("verifier_get_receipt_ms", Date.now() - startMs);
+        return result;
+      } catch (err) {
+        increment("verifier_get_receipt_error");
+        throw err;
+      }
     },
     async submitCase(input: SubmitCaseInput): Promise<SubmitCaseResult> {
       const startMs = Date.now();
