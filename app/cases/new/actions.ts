@@ -1,11 +1,19 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { saveDemoCase } from "@/lib/domain/fixtures";
 import { validateCasePayload } from "@/lib/domain/case-payload";
 import { appendAudit } from "@/lib/audit/audit-log";
+import { createRateLimiter } from "@/lib/security/rate-limit";
 
 export type CreateCaseResult = { ok: true; id: string } | { ok: false; errors: string[] };
+
+const rateLimiter = createRateLimiter({ capacity: 5, refillPerSecond: 1 / 6 });
+
+async function clientKey(): Promise<string> {
+  const h = await headers();
+  return h.get("x-forwarded-for") ?? h.get("x-real-ip") ?? "anonymous";
+}
 
 async function authorized(): Promise<boolean> {
   const expected = process.env.PILOT_TOKEN;
@@ -17,6 +25,16 @@ async function authorized(): Promise<boolean> {
 export async function createCaseAction(input: unknown): Promise<CreateCaseResult> {
   if (!(await authorized())) {
     return { ok: false, errors: ["Unauthorized: pilot token required."] };
+  }
+
+  const key = await clientKey();
+  const limit = rateLimiter.hit(key);
+  if (!limit.allowed) {
+    const retrySec = Math.ceil(limit.retryAfterMs / 1000);
+    return {
+      ok: false,
+      errors: [`Rate limit exceeded. Try again in ${retrySec}s.`],
+    };
   }
 
   const validated = validateCasePayload(input);
