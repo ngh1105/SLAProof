@@ -1,0 +1,6 @@
+Contact: https://github.com/ngh1105/SLAProof/security/advisories/new
+Expires: 2027-05-26T00:00:00Z
+Preferred-Languages: en, vi
+Canonical: https://example.com/.well-known/security.txt
+Policy: https://github.com/ngh1105/SLAProof/blob/master/SECURITY.md
+Acknowledgments: https://github.com/ngh1105/SLAProof/graphs/contributors
