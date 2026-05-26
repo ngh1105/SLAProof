@@ -1,0 +1,6 @@
+# SLAProof pilot — internal tool. Not for public indexing.
+User-agent: *
+Disallow: /
+
+# Allow security researchers to find the contact file.
+Allow: /.well-known/security.txt
