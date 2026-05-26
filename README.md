@@ -1,5 +1,11 @@
 # SLAProof
 
+[![CI](https://github.com/ngh1105/SLAProof/actions/workflows/ci.yml/badge.svg)](https://github.com/ngh1105/SLAProof/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-22.x-brightgreen)](package.json)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black)](package.json)
+[![Studionet](https://img.shields.io/badge/Studionet-0x419D…dBC9-blue)](docs/runbooks/genlayer-deployment.md)
+
 SLAProof is a GenLayer-backed verifier for Web3 infrastructure SLA incidents.
 The first product focuses on RPC provider downtime and degraded service. It
 turns scattered evidence, SLA clauses, and incident windows into auditable SLA
