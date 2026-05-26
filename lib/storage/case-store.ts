@@ -264,3 +264,16 @@ export function saveDemoCase(slaCase: SlaCase): void {
     releaseLock();
   }
 }
+
+// ----- CaseStore interface adapter -----
+// Wraps the existing function-style API to satisfy the CaseStore contract
+// from case-store-interface.ts. Lets call sites depend on the interface
+// instead of the concrete file-backed module.
+
+import type { CaseStore } from "./case-store-interface";
+
+export const fileCaseStore: CaseStore = {
+  list: getDemoCases,
+  get: getDemoCase,
+  save: saveDemoCase,
+};
