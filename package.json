@@ -18,6 +18,7 @@
     "lint:contract:ast": "genvm-lint lint contracts/slaproof_rpc_verifier/main.py",
     "smoke:genlayer:read": "node scripts/smoke-genlayer-read.mjs",
     "smoke:genlayer:write": "node scripts/smoke-genlayer-write.mjs",
+    "audit:rotate": "node scripts/rotate-audit-log.mjs",
     "test:e2e": "playwright test",
     "verify:demo": "npm run lint && npm run typecheck && npm test && npm run build",
     "readiness:check": "node scripts/readiness-check.mjs"
