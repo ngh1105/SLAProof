@@ -1,0 +1,39 @@
+# SLAProof pilot docker-compose.
+#
+# Usage:
+#   docker compose up -d              # build + run
+#   docker compose logs -f             # tail logs
+#   docker compose down                # stop + remove
+#
+# Environment is read from .env (gitignored). Copy .env.local.example to
+# .env first.
+
+services:
+  app:
+    build: .
+    image: slaproof:latest
+    container_name: slaproof
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_SLAPROOF_VERIFIER=${NEXT_PUBLIC_SLAPROOF_VERIFIER:-mock}
+      - NEXT_PUBLIC_GENLAYER_RPC_URL=${NEXT_PUBLIC_GENLAYER_RPC_URL:-}
+      - NEXT_PUBLIC_SLAPROOF_NETWORK_LABEL=${NEXT_PUBLIC_SLAPROOF_NETWORK_LABEL:-}
+      - NEXT_PUBLIC_SLAPROOF_CONTRACT_ADDRESS=${NEXT_PUBLIC_SLAPROOF_CONTRACT_ADDRESS:-}
+      - NEXT_PUBLIC_SLAPROOF_CHAIN_ID=${NEXT_PUBLIC_SLAPROOF_CHAIN_ID:-}
+      - PILOT_TOKEN=${PILOT_TOKEN:-}
+    volumes:
+      # Persist pilot data across container restarts
+      - slaproof-data:/app/.data
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  slaproof-data:
+    driver: local
