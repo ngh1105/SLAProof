@@ -18,6 +18,40 @@ export type AuditEntry = {
   details?: Record<string, unknown>;
 };
 
+// Keys whose values must never land in the audit log. We blanket-redact
+// rather than allow-list because details are written by many call sites
+// and a future contributor may pass through user-controlled fields.
+const REDACT_KEYS = [
+  "password", "passwd", "secret", "token", "api_key", "apiKey",
+  "privateKey", "private_key", "authorization", "cookie", "session",
+];
+
+function isSensitiveKey(key: string): boolean {
+  const lc = key.toLowerCase();
+  return REDACT_KEYS.some((k) => lc.includes(k.toLowerCase()));
+}
+
+export function redactDetails(input: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
+  if (!input) return undefined;
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (isSensitiveKey(key)) {
+      out[key] = "[REDACTED]";
+      continue;
+    }
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      out[key] = redactDetails(value as Record<string, unknown>);
+      continue;
+    }
+    if (typeof value === "string" && value.length > 500) {
+      out[key] = `${value.slice(0, 500)}...[truncated ${value.length - 500} chars]`;
+      continue;
+    }
+    out[key] = value;
+  }
+  return out;
+}
+
 function ensureAuditFile(): void {
   if (!fs.existsSync(AUDIT_DIR)) {
     fs.mkdirSync(AUDIT_DIR, { recursive: true });
@@ -32,6 +66,7 @@ export function appendAudit(entry: Omit<AuditEntry, "timestamp">): void {
   const full: AuditEntry = {
     timestamp: new Date().toISOString(),
     ...entry,
+    details: redactDetails(entry.details),
   };
   fs.appendFileSync(AUDIT_PATH, `${JSON.stringify(full)}\n`, "utf-8");
 }

@@ -50,3 +50,53 @@ describe("audit-log", () => {
     expect(entries).toHaveLength(2);
   });
 });
+
+describe("audit-log redaction", () => {
+  beforeEach(() => {
+    if (fs.existsSync(TMP_AUDIT)) fs.unlinkSync(TMP_AUDIT);
+  });
+  afterEach(() => {
+    if (fs.existsSync(TMP_AUDIT)) fs.unlinkSync(TMP_AUDIT);
+  });
+
+  it("redacts sensitive keys (case-insensitive substring match)", () => {
+    appendAudit({
+      action: "case_failed",
+      caseId: "c1",
+      actor: "test",
+      details: { password: "hunter2", api_key: "ghp_xxx", normal: "fine" },
+    });
+    const entries = readAudit();
+    expect(entries[0].details).toEqual({
+      password: "[REDACTED]",
+      api_key: "[REDACTED]",
+      normal: "fine",
+    });
+  });
+
+  it("recurses into nested objects", () => {
+    appendAudit({
+      action: "case_failed",
+      caseId: "c1",
+      actor: "test",
+      details: { nested: { authorization: "Bearer x", count: 5 } },
+    });
+    const entries = readAudit();
+    expect((entries[0].details!.nested as Record<string, unknown>).authorization).toBe("[REDACTED]");
+    expect((entries[0].details!.nested as Record<string, unknown>).count).toBe(5);
+  });
+
+  it("truncates long strings", () => {
+    const longText = "a".repeat(800);
+    appendAudit({
+      action: "case_failed",
+      caseId: "c1",
+      actor: "test",
+      details: { reason: longText },
+    });
+    const entries = readAudit();
+    const reason = entries[0].details!.reason as string;
+    expect(reason.length).toBeLessThan(longText.length);
+    expect(reason).toContain("[truncated");
+  });
+});
