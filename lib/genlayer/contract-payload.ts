@@ -1,4 +1,5 @@
 import type { EvidenceItem, Receipt, SlaCase } from "@/lib/domain/types";
+import { checkReceiptVersion } from "@/lib/domain/receipt-versions";
 
 export type ContractEvidenceItem = {
   id: string;
@@ -93,6 +94,12 @@ export function toContractCaseJson(slaCase: SlaCase): string {
 }
 
 export function fromContractReceipt(receipt: ContractReceipt): Receipt {
+  const versionCheck = checkReceiptVersion(receipt as { version?: unknown });
+  if (!versionCheck.ok) {
+    throw new Error(
+      `Unsupported receipt version (${versionCheck.reason}): ${String(versionCheck.observed)}`,
+    );
+  }
   return {
     version: receipt.version,
     caseId: receipt.case_id,
