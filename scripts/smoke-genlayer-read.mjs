@@ -25,17 +25,44 @@ if (!caseId) {
   process.exit(1);
 }
 
+function isReceiptNotFound(err) {
+  if (!err) return false;
+  const message = err instanceof Error ? err.message : String(err);
+  if (/receipt not found/i.test(message)) return true;
+  // genlayer-js wraps the contract revert reason in cause.data.receipt.result as base64
+  const cause = err && typeof err === "object" ? err.cause : null;
+  const result = cause?.data?.receipt?.result;
+  if (typeof result === "string") {
+    try {
+      const decoded = Buffer.from(result, "base64").toString("utf-8");
+      if (/receipt not found/i.test(decoded)) return true;
+    } catch {
+      // ignore
+    }
+  }
+  return false;
+}
+
 const client = createClient({ chain: studionet, endpoint: rpcUrl });
 
-const raw = await client.readContract({
-  address: contractAddress,
-  functionName: "get_receipt",
-  args: [caseId],
-});
+let raw;
+try {
+  raw = await client.readContract({
+    address: contractAddress,
+    functionName: "get_receipt",
+    args: [caseId],
+  });
+} catch (err) {
+  if (isReceiptNotFound(err)) {
+    console.log(JSON.stringify({ case_id: caseId, status: "no_receipt" }, null, 2));
+    process.exit(0);
+  }
+  throw err;
+}
 
 if (typeof raw !== "string" || raw.trim() === "") {
-  console.error(`No receipt returned for ${caseId}.`);
-  process.exit(1);
+  console.log(JSON.stringify({ case_id: caseId, status: "no_receipt" }, null, 2));
+  process.exit(0);
 }
 
 const receipt = JSON.parse(raw);
