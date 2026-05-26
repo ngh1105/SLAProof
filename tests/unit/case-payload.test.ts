@@ -101,3 +101,49 @@ describe("validateCasePayload", () => {
     expect(result.ok).toBe(false);
   });
 });
+
+describe("scanCaseForSensitiveData expanded patterns", () => {
+  it("flags AWS access key id", () => {
+    const seed = validSeed();
+    seed.evidence[0].submittedExcerpt = "AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE";
+    const f = scanCaseForSensitiveData(seed);
+    expect(f.some((m) => /AWS Access Key/.test(m))).toBe(true);
+  });
+
+  it("flags GitHub personal access token (ghp_)", () => {
+    const seed = validSeed();
+    seed.evidence[0].submittedExcerpt = "token=ghp_" + "a".repeat(36);
+    const f = scanCaseForSensitiveData(seed);
+    expect(f.some((m) => /GitHub personal access/.test(m))).toBe(true);
+  });
+
+  it("flags Slack token", () => {
+    const seed = validSeed();
+    seed.evidence[0].submittedExcerpt = "header X-Slack: xoxb-1234567890-token-value";
+    const f = scanCaseForSensitiveData(seed);
+    expect(f.some((m) => /Slack token/.test(m))).toBe(true);
+  });
+
+  it("flags JWT", () => {
+    const seed = validSeed();
+    seed.evidence[0].submittedExcerpt =
+      "auth: eyJhbGciOiJIUzI1NiIs.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signaturepart_xxxxxxxxxxxx";
+    const f = scanCaseForSensitiveData(seed);
+    expect(f.some((m) => /JWT detected/.test(m))).toBe(true);
+  });
+
+  it("flags PEM private key block", () => {
+    const seed = validSeed();
+    seed.evidence[0].submittedExcerpt =
+      "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA...";
+    const f = scanCaseForSensitiveData(seed);
+    expect(f.some((m) => /Private key block/.test(m))).toBe(true);
+  });
+
+  it("flags password assignment", () => {
+    const seed = validSeed();
+    seed.evidence[0].submittedExcerpt = "password = supersecret123";
+    const f = scanCaseForSensitiveData(seed);
+    expect(f.some((m) => /password|secret/i.test(m))).toBe(true);
+  });
+});
