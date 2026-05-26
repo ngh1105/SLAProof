@@ -1,11 +1,14 @@
 import { getDemoCase } from "@/lib/domain/fixtures";
 import type { Receipt } from "@/lib/domain/types";
+import { increment } from "@/lib/observability/metrics";
 
 export function exportReceiptJson(receipt: Receipt): string {
+  increment("export_receipt_json");
   return `${JSON.stringify(receipt, null, 2)}\n`;
 }
 
 export function exportReceiptMarkdown(receipt: Receipt): string {
+  increment("export_receipt_markdown");
   const slaCase = getDemoCase(receipt.caseId);
   const title = slaCase?.title ?? receipt.caseId;
   const citations = receipt.evidenceCitations
