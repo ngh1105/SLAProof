@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Trash2, ShieldAlert, FilePlus2, Sparkles } from "lucide-react";
 import { hashEvidence } from "@/lib/domain/hash";
 import { validateSlaCase } from "@/lib/domain/validation";
+import { findSlaTemplate, slaTemplates } from "@/lib/domain/sla-templates";
 import { createCaseAction } from "./actions";
 import type { SlaCase, EvidenceItem, EvidenceType } from "@/lib/domain/types";
 
@@ -468,6 +469,29 @@ export default function NewCasePage() {
                 <h2>3. Promised SLA terms</h2>
                 <p>Contractual thresholds to verify against.</p>
               </div>
+            </div>
+
+            <div className="form-group">
+              <label>Template</label>
+              <select
+                className="select"
+                defaultValue="custom"
+                onChange={(e) => {
+                  const template = findSlaTemplate(e.target.value);
+                  if (!template || template.id === "custom") return;
+                  setAvailabilityTarget(template.terms.availabilityTarget);
+                  setErrorThreshold(template.terms.errorThreshold);
+                  setLatencyThreshold(template.terms.latencyThreshold);
+                  setExclusions(template.terms.exclusions);
+                  setCreditRule(template.terms.creditRule);
+                }}
+              >
+                {slaTemplates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="form-group">
