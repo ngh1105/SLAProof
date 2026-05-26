@@ -38,6 +38,9 @@ export default function RootLayout({
               <Link className="nav-link" href="/audit">
                 Audit
               </Link>
+              <Link className="nav-link" href="/ops">
+                Ops
+              </Link>
               <Link className="button" href="/cases/new">
                 <FilePlus2 size={16} />
                 New case
