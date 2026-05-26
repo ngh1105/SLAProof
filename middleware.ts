@@ -8,7 +8,7 @@ export function middleware(req: NextRequest) {
   if (!expected) return NextResponse.next();
 
   const { pathname } = req.nextUrl;
-  if (pathname.startsWith("/login") || pathname.startsWith("/_next") || pathname.startsWith("/api/health") || pathname === "/favicon.ico") {
+  if (pathname.startsWith("/login") || pathname.startsWith("/_next") || pathname.startsWith("/api/health") || pathname.startsWith("/api/csp-report") || pathname === "/favicon.ico") {
     return NextResponse.next();
   }
 
