@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { saveDemoCase } from "@/lib/domain/fixtures";
 import { validateCasePayload } from "@/lib/domain/case-payload";
+import { appendAudit } from "@/lib/audit/audit-log";
 
 export type CreateCaseResult = { ok: true; id: string } | { ok: false; errors: string[] };
 
@@ -25,8 +26,20 @@ export async function createCaseAction(input: unknown): Promise<CreateCaseResult
 
   try {
     saveDemoCase(validated.case);
+    appendAudit({
+      action: "case_created",
+      caseId: validated.case.id,
+      actor: "pilot",
+      details: { provider: validated.case.providerName, chain: validated.case.chain },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown storage error.";
+    appendAudit({
+      action: "case_failed",
+      caseId: validated.case.id,
+      actor: "pilot",
+      details: { reason: message },
+    });
     return { ok: false, errors: [`Failed to save case: ${message}`] };
   }
 
