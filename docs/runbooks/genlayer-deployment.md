@@ -2,6 +2,15 @@
 
 This runbook is for the first live deployment of `SlaProofRpcVerifier`.
 
+## Deployed Addresses
+
+| Network | Contract | Tx hash | Deployed |
+|---|---|---|---|
+| Studionet | `0x419D67e92855B94C0BF997638963961CA0A5dBC9` | `0xaeabf7d8737ae32a20164263c33776f6e0c87da924e692c96638604ffd9b8900` | 2026-05-26 |
+
+Studionet chain id: `61999`. RPC: `https://studio.genlayer.com/api`.
+Validator round: 5/5 AGREE, status ACCEPTED.
+
 ## Current Status
 
 The contract package is ready for local deterministic checks:
