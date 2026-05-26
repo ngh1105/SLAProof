@@ -7,6 +7,7 @@ import { appendAudit } from "@/lib/audit/audit-log";
 import { createRateLimiter } from "@/lib/security/rate-limit";
 import { increment, observe } from "@/lib/observability/metrics";
 import { log } from "@/lib/observability/logger";
+import { reportError } from "@/lib/observability/error-reporter";
 
 export type CreateCaseResult = { ok: true; id: string } | { ok: false; errors: string[] };
 
@@ -71,7 +72,7 @@ export async function createCaseAction(input: unknown): Promise<CreateCaseResult
       details: { reason: message },
     });
     increment("case_create_failed");
-    log.error("case_create_failed", { caseId: validated.case.id, reason: message });
+    reportError(error, { phase: "saveDemoCase", caseId: validated.case.id });
     return { ok: false, errors: [`Failed to save case: ${message}`] };
   }
 
