@@ -1,8 +1,15 @@
 # SLAProof Threat Model (Pilot)
 
-Date: 2026-05-26
+Date: 2026-05-26 (rev 2)
 Status: Draft for pilot scope only. Production threat model is Phase 4
 follow-up.
+
+## Revision history
+
+- rev 1 (2026-05-26): initial 8 threats (T1-T8), pilot scope
+- rev 2 (2026-05-26): folded in mitigations from PRs #17, #30-#56 — rate
+  limit, scanner expansion, security headers, CSP, error reporter, env
+  validation, audit log rotation, backups, instrumentation hook
 
 ## In-scope assets
 
@@ -39,8 +46,9 @@ excerpt. The excerpt is hashed and submitted to the contract — irrecoverable o
 public chain.
 
 **Mitigation:**
-- Client-side scanner blocks 4 patterns (private key, Stripe, Google API key,
-  auth header) before submission.
+- Client-side scanner blocks 12 patterns (private key, Stripe, Google API key,
+  auth header, AWS access key id, GitHub PAT/OAuth/Apps, Slack tokens, JWT,
+  PEM private key block, password/secret assignments) before submission. (PR #53)
 - Server action re-runs the scan in `validateCasePayload` so a bypassed client
   cannot reach storage.
 - Operator guide + redaction checklist call this out.
