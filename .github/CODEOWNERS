@@ -1,0 +1,16 @@
+# CODEOWNERS — sets default reviewer expectations.
+#
+# Single-maintainer pilot, so ngh1105 owns everything by default.
+# Refine as the team grows.
+
+* @ngh1105
+
+# Security-sensitive areas explicitly owned so reviews are never auto-approved
+/SECURITY.md @ngh1105
+/.github/ @ngh1105
+/middleware.ts @ngh1105
+/lib/security/ @ngh1105
+/lib/audit/ @ngh1105
+/contracts/ @ngh1105
+/docs/security/ @ngh1105
+/docs/policies/ @ngh1105
