@@ -7,6 +7,7 @@ import { ArrowLeft, Plus, Trash2, ShieldAlert, FilePlus2, Sparkles } from "lucid
 import { hashEvidence } from "@/lib/domain/hash";
 import { validateSlaCase } from "@/lib/domain/validation";
 import { findSlaTemplate, slaTemplates } from "@/lib/domain/sla-templates";
+import { parseMonitoringCsv } from "@/lib/domain/monitoring-csv";
 import { createCaseAction } from "./actions";
 import type { SlaCase, EvidenceItem, EvidenceType } from "@/lib/domain/types";
 
@@ -347,6 +348,33 @@ export default function NewCasePage() {
                 onChange={(e) => setIncidentSummary(e.target.value)}
                 required
               />
+              <div style={{ marginTop: "8px", display: "flex", gap: "8px", alignItems: "center" }}>
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  id="csv-monitoring-upload"
+                  style={{ display: "none" }}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const text = await file.text();
+                    const result = parseMonitoringCsv(text);
+                    if (!result.ok) {
+                      setErrors([`CSV import failed: ${result.errors.join(" ")}`]);
+                      return;
+                    }
+                    const block = `\n\n[Monitoring CSV summary — imported from ${file.name}]\n${result.summary}`;
+                    setIncidentSummary((prev) => `${prev}${block}`.trim());
+                    e.target.value = "";
+                  }}
+                />
+                <label htmlFor="csv-monitoring-upload" className="ghost-button" style={{ cursor: "pointer", padding: "6px 12px", minHeight: "32px" }}>
+                  Import monitoring CSV
+                </label>
+                <span style={{ fontSize: "12px", color: "var(--muted)" }}>
+                  Headers: timestamp, total_requests, failed_requests
+                </span>
+              </div>
             </div>
           </section>
 
