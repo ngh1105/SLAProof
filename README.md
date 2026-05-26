@@ -67,20 +67,47 @@ npm run smoke:genlayer:write
 
 ## Documentation Map
 
+### Product
 - [Product Spec](docs/specs/2026-05-22-slaproof-product-spec.md)
 - [Product Design](docs/design/01-product-design.md)
 - [System Architecture](docs/architecture/01-system-architecture.md)
 - [GenLayer Contract Spec](docs/architecture/02-genlayer-contract-spec.md)
 - [Contract README](contracts/slaproof_rpc_verifier/README.md)
+
+### Plans
 - [Demo Plan](docs/plans/01-demo-plan.md)
 - [Production Roadmap](docs/plans/02-production-roadmap.md)
 - [Implementation Plan](docs/plans/03-implementation-plan.md)
 - [MVP Task Breakdown](docs/tasks/01-mvp-task-breakdown.md)
 - [Production Readiness Checklist](docs/readiness/production-readiness-checklist.md)
+
+### Operations
 - [GenLayer Deployment Runbook](docs/runbooks/genlayer-deployment.md)
+- [Incident Response Runbook](docs/runbooks/incident-response.md)
+- [Live Demo Script](docs/runbooks/live-demo-script.md)
 - [Pilot Operator Guide](docs/runbooks/pilot-operator-guide.md)
 - [Evidence Redaction Checklist](docs/templates/evidence-redaction-checklist.md)
 - [Vendor Escalation Template](docs/templates/vendor-escalation.md)
+
+### Security & Policy
+- [Security Reporting](SECURITY.md)
+- [Pilot Threat Model](docs/security/threat-model-pilot.md)
+- [Contract Upgrade Policy](docs/policies/contract-upgrade-policy.md)
+- [Data Retention Policy](docs/policies/data-retention-policy.md)
+
+### Project
+- [Changelog](CHANGELOG.md)
+- [Contributing](CONTRIBUTING.md)
+- [E2E Test Notes](tests/e2e/README.md)
+
+## Operational Endpoints
+
+When the app is running:
+
+- `/api/health` — readiness probe (200 ok / 503 degraded)
+- `/api/metrics` — counter + histogram snapshot
+- `/api/version` — app version, commit SHA, supported receipt versions, contract address
+- `/audit` — audit log viewer (last 50 events)
 
 ## Positioning Guardrails
 
