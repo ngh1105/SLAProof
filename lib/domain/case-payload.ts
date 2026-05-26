@@ -19,6 +19,38 @@ const SENSITIVE_PATTERNS: Array<{ pattern: RegExp; message: string }> = [
     pattern: /authorization:\s*(?:bearer|basic)\s+[0-9a-zA-Z+/=_-]+/i,
     message: "Authorization Token detected. Redact headers before submission.",
   },
+  {
+    pattern: /AKIA[0-9A-Z]{16}/,
+    message: "AWS Access Key ID detected. Redact credentials before submission.",
+  },
+  {
+    pattern: /ghp_[0-9a-zA-Z]{36}/,
+    message: "GitHub personal access token detected. Redact credentials before submission.",
+  },
+  {
+    pattern: /gho_[0-9a-zA-Z]{36}/,
+    message: "GitHub OAuth token detected. Redact credentials before submission.",
+  },
+  {
+    pattern: /ghs_[0-9a-zA-Z]{36}/,
+    message: "GitHub Apps token detected. Redact credentials before submission.",
+  },
+  {
+    pattern: /xox[baprs]-[0-9a-zA-Z-]{10,}/,
+    message: "Slack token detected. Redact credentials before submission.",
+  },
+  {
+    pattern: /eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}/,
+    message: "JWT detected. Redact tokens before submission.",
+  },
+  {
+    pattern: /-----BEGIN (?:RSA |OPENSSH |EC |DSA |PGP )?PRIVATE KEY-----/,
+    message: "Private key block detected. Do NOT submit private keys.",
+  },
+  {
+    pattern: /(?:password|passwd|secret|api[_-]?key)\s*[=:]\s*["']?[A-Za-z0-9!@#$%^&*_\-+=]{8,}["']?/i,
+    message: "Possible password / secret assignment detected. Redact before submission.",
+  },
 ];
 
 function scanText(text: string): string[] {
