@@ -14,6 +14,7 @@ import {
   type VerifyResult,
 } from "@/lib/verifier/types";
 import { increment, observe } from "@/lib/observability/metrics";
+import { reportError } from "@/lib/observability/error-reporter";
 import { ExecutionResult, TransactionStatus } from "genlayer-js/types";
 
 type GenLayerReadClient = {
@@ -392,6 +393,9 @@ export function createGenLayerVerifier(
       } catch (err) {
         const mapped = mapWriteError(err);
         increment(`verifier_submit_${mapped.code.toLowerCase()}`);
+        if (mapped.code === "RPC_FAILED" || mapped.code === "UNKNOWN") {
+          reportError(err, { phase: "submitCase", caseId: input.slaCase.id, code: mapped.code });
+        }
         throw mapped;
       }
     },
@@ -423,6 +427,7 @@ export function createGenLayerVerifier(
         });
       } catch (err) {
         increment("verifier_wait_rpc_failed");
+        reportError(err, { phase: "waitForFinalization", txHash, code: "RPC_FAILED" });
         throw new VerifierError("RPC_FAILED", "Waiting for transaction failed.", err);
       }
       const execName: unknown = receipt.txExecutionResultName;
