@@ -44,6 +44,27 @@ npm run verify:demo
 npm run test:e2e
 ```
 
+## Live GenLayer Mode
+
+To run against the deployed `SlaProofRpcVerifier` on Studionet:
+
+1. Copy `.env.local.example` to `.env.local`.
+2. Set `NEXT_PUBLIC_SLAPROOF_VERIFIER=genlayer`.
+3. Populate `NEXT_PUBLIC_SLAPROOF_CONTRACT_ADDRESS`,
+   `NEXT_PUBLIC_GENLAYER_RPC_URL`, `NEXT_PUBLIC_SLAPROOF_NETWORK_LABEL`, and
+   `NEXT_PUBLIC_SLAPROOF_CHAIN_ID`.
+4. Connect a GenLayer-compatible wallet from the topbar.
+5. Open a seeded case and click **Submit case**.
+
+CLI smoke (no UI, server-side demo signer):
+
+```bash
+GENLAYER_PRIVATE_KEY=0x... \
+NEXT_PUBLIC_SLAPROOF_CONTRACT_ADDRESS=0x... \
+NEXT_PUBLIC_GENLAYER_RPC_URL=https://studio.genlayer.com/api \
+npm run smoke:genlayer:write
+```
+
 ## Documentation Map
 
 - [Product Spec](docs/specs/2026-05-22-slaproof-product-spec.md)
