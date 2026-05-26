@@ -28,6 +28,15 @@ the production roadmap phases instead of semver until a stable release ships.
 - /ops dashboard for verifier readiness + metrics (PR #55)
 - External health monitor script (PR #56)
 - API route unit tests (PR #45)
+- /api/audit endpoint with caseId filter + tests (PR #59, #60)
+- x-request-id header in middleware (PR #61)
+- Login rate limit + metrics (PR #62)
+- CSP report endpoint tests (PR #63)
+- CodeQL workflow (PR #65)
+- /.well-known/security.txt (PR #66)
+- Threat model rev 2 (PR #58)
+- Receipt export + contract payload tests (PR #69, #70)
+- Multi-stage Dockerfile + docker-compose + deployment runbook (PR #71, #72, #73)
 
 ### Phase 3 — Pilot readiness
 
@@ -56,6 +65,9 @@ the production roadmap phases instead of semver until a stable release ships.
 - CHANGELOG, SECURITY policy, CONTRIBUTING guide (PR #42, #43, #44)
 - Organized README doc map (PR #46)
 - Dependabot config + GitHub issue/PR templates (PR #48, #51)
+- MIT LICENSE (PR #64)
+- CODEOWNERS (PR #67)
+- README badges (PR #68)
 
 ## Status snapshot
 
@@ -65,5 +77,5 @@ the production roadmap phases instead of semver until a stable release ships.
 | Phase 1 Local Demo MVP | 100% |
 | Phase 2 GenLayer Live MVP | ~95% (live write end-to-end pending operator) |
 | Phase 3 Pilot readiness | ~95% (managed DB blocked, interface ready) |
-| Phase 4 Production hardening | ~95% (Sentry/alerting wiring + contract audit pending) |
+| Phase 4 Production hardening | ~98% (Sentry sink + alerting wiring + contract audit pending) |
 | Phase 5 Expansion | 0% (planned) |
