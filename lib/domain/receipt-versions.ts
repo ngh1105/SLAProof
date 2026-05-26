@@ -1,5 +1,3 @@
-import type { Receipt } from "./types";
-
 export const SUPPORTED_RECEIPT_VERSIONS = ["slaproof.receipt.v0"] as const;
 export type SupportedReceiptVersion = (typeof SUPPORTED_RECEIPT_VERSIONS)[number];
 
