@@ -21,16 +21,51 @@ py -3 -m py_compile contracts\slaproof_rpc_verifier\main.py contracts\slaproof_r
 ```
 
 `genvm-lint` exists in two local Python installs. PATH prefers a stale Python
-3.14 shim that exits without useful diagnostics. The Python 3.12 shim works for
-AST lint with UTF-8 output enabled, but full validation currently fails to load
-the SDK with `HTTP Error 404: Not Found`.
+3.14 shim that exits without useful diagnostics. Use the Python 3.12 shim
+explicitly.
 
-Working AST lint command:
+### Full validation (AST lint + SDK semantic check)
+
+The full `check` subcommand resolves the latest GenVM release tag, then tries
+to download `genvm-universal.tar.xz` from that release. As of 2026-05-27 the
+latest tag is `v0.3.0-rc0` which does not publish that asset (only
+`genvm-runners-all.tar.xz`), so the download returns 404 and validation fails
+with `Failed to load SDK: HTTP Error 404: Not Found`.
+
+Workaround: pre-cache the last release that ships the universal tarball
+(`v0.2.16`), then alias the cached file under the latest-tag name so the
+linter finds it locally:
 
 ```powershell
 $env:PYTHONIOENCODING='utf-8'
 $env:PYTHONUTF8='1'
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+
+# 1. Pre-download a known-good release
+& 'C:\Users\Admin\AppData\Local\Programs\Python\Python312\Scripts\genvm-lint.exe' download --version v0.2.16
+
+# 2. Alias the cached tarball + index for whatever tag the linter resolves as 'latest'
+$cache = "$env:USERPROFILE\.cache\genvm-linter"
+$latest = "v0.3.0-rc0"  # update if upstream rolls forward
+Copy-Item "$cache\genvm-universal-v0.2.16.tar.xz"            "$cache\genvm-universal-$latest.tar.xz"            -Force
+Copy-Item "$cache\genvm-universal-v0.2.16.tar.xz.index.json" "$cache\genvm-universal-$latest.tar.xz.index.json" -Force
+
+# 3. Run the full check
+& 'C:\Users\Admin\AppData\Local\Programs\Python\Python312\Scripts\genvm-lint.exe' check contracts\slaproof_rpc_verifier\main.py
+```
+
+Expected output:
+
+```
+✓ Lint passed (3 checks)
+✓ Validation passed
+  Contract: SlaProofRpcVerifier
+  Methods: 3 (2 view, 1 write)
+```
+
+If only the AST checks are needed (no SDK), use the bare `lint` subcommand:
+
+```powershell
 & 'C:\Users\Admin\AppData\Local\Programs\Python\Python312\Scripts\genvm-lint.exe' lint contracts\slaproof_rpc_verifier\main.py
 ```
 
