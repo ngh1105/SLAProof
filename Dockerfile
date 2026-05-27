@@ -4,7 +4,10 @@
 # Stage 2: build — produce the Next.js standalone output
 # Stage 3: run   — minimal runtime image, non-root user
 #
-# Build:   docker build -t slaproof:latest .
+# Build:   docker build -t slaproof:latest \
+#            --build-arg GIT_COMMIT_SHA=$(git rev-parse HEAD) \
+#            --build-arg BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
+#            .
 # Run:     docker run -p 3000:3000 \
 #            -e NEXT_PUBLIC_SLAPROOF_VERIFIER=mock \
 #            slaproof:latest
@@ -23,10 +26,14 @@ ENV NODE_ENV=production
 RUN npm run build
 
 FROM node:22-alpine AS run
+ARG GIT_COMMIT_SHA=unknown
+ARG BUILD_TIME=unknown
 WORKDIR /app
 RUN addgroup -g 1001 -S nodejs && adduser -S -u 1001 -G nodejs nextjs
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV GIT_COMMIT_SHA=${GIT_COMMIT_SHA}
+ENV BUILD_TIME=${BUILD_TIME}
 
 COPY --from=build /app/public ./public
 COPY --from=build /app/.next ./.next
@@ -36,6 +43,10 @@ COPY --from=build /app/next.config.ts ./next.config.ts
 
 USER nextjs
 EXPOSE 3000
+LABEL org.opencontainers.image.source="https://github.com/ngh1105/SLAProof"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.revision=${GIT_COMMIT_SHA}
+LABEL org.opencontainers.image.created=${BUILD_TIME}
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://localhost:3000/api/health || exit 1
 CMD ["npm", "run", "start"]
