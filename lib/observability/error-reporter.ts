@@ -10,7 +10,7 @@
 // (closes P5 in the production threat model).
 
 import { log } from "./logger";
-import { redactDetails } from "@/lib/audit/audit-log";
+import { redactDetails } from "./redact";
 
 export type ErrorContext = Record<string, unknown>;
 
