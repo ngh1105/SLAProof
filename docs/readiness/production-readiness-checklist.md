@@ -55,7 +55,9 @@ Last reviewed: 2026-05-27
 - ✅ Contract payload schema is versioned (`slaproof.case.v0`, `slaproof.receipt.v0`).
 - ✅ Direct tests cover valid and invalid payloads.
 - ✅ Tests cover breach, no breach, inconclusive, and needs more evidence.
-- 🟡 GenVM lint passes (AST lint ✅; full `check` blocked by SDK 404 in local env).
+- 🟡 GenVM lint passes (AST lint ✅; full `check` works after caching the
+  v0.2.16 universal tarball — see workaround in
+  `docs/runbooks/genlayer-deployment.md`).
 - ✅ Deployment runbook exists.
 - ✅ Contract address and network are visible in the app.
 - ✅ Contract upgrade & deployment policy documented.
