@@ -109,7 +109,8 @@ Before a real pilot:
 - ✅ Run at least three realistic incident cases.
 - ✅ Review product language for legal overclaiming.
 - 🟡 Verify live GenLayer receipt read-back (read path ✅; live write
-  end-to-end pending operator verification with funded wallet).
+  end-to-end verified via tx `0x204a31d397363a2151ecfa3218a501ebcc3cdf7d0ee0e5d343d1b0e9c07b221a`
+  on Studionet — `case-rpc-write-001` receipt is readable on-chain).
 - ✅ Document known limitations.
 - ✅ Pilot threat model published (rev 2).
 - ✅ Login brute-force protection (5 attempts / 5 min).
