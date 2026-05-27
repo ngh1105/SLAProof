@@ -13,3 +13,4 @@ __pycache__/
 *.pyc
 lib/storage/db.json
 .data/
+coverage/
