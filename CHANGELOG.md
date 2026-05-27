@@ -37,6 +37,17 @@ the production roadmap phases instead of semver until a stable release ships.
 - Threat model rev 2 (PR #58)
 - Receipt export + contract payload tests (PR #69, #70)
 - Multi-stage Dockerfile + docker-compose + deployment runbook (PR #71, #72, #73)
+- Hash + verifier-factory + mock-adapter unit tests (PR #82, #83, #87)
+- robots.txt blocks pilot indexing (PR #77)
+- Environment variables reference + error tracking integration guide (PR #78, #79)
+- Audit log details redaction (PR #75)
+- Onboarding guide (PR #86)
+- Playwright report uploaded on failure (PR #84)
+- v8 coverage with thresholds + CI artifact (PR #85, #89, #90)
+- Docker image revision/created labels + commit SHA env (PR #88)
+- E2E coverage of /ops, /audit, /api routes (PR #80)
+- Readiness checklist refresh #2 (PR #81)
+- CHANGELOG covering PRs #58-#73 (PR #74)
 
 ### Phase 3 — Pilot readiness
 
