@@ -60,9 +60,27 @@ export async function createCaseAction(input: unknown): Promise<CreateCaseResult
       actor: "pilot",
       details: { provider: validated.case.providerName, chain: validated.case.chain },
     });
+    for (const evidence of validated.case.evidence) {
+      appendAudit({
+        action: "evidence_added",
+        caseId: validated.case.id,
+        actor: "pilot",
+        details: {
+          evidenceId: evidence.id,
+          type: evidence.type,
+          hash: evidence.hash,
+          title: evidence.title,
+        },
+      });
+      increment("evidence_added");
+    }
     increment("case_create_ok");
     observe("case_create_ms", Date.now() - startMs);
-    log.info("case_created", { caseId: validated.case.id, provider: validated.case.providerName });
+    log.info("case_created", {
+      caseId: validated.case.id,
+      provider: validated.case.providerName,
+      evidenceCount: validated.case.evidence.length,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown storage error.";
     appendAudit({

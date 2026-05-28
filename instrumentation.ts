@@ -4,6 +4,7 @@
 
 import { validateEnv } from "@/lib/config/env-validation";
 import { log } from "@/lib/observability/logger";
+import { configureErrorTrackingFromEnv } from "@/lib/observability/error-tracking";
 
 export async function register(): Promise<void> {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
@@ -25,4 +26,8 @@ export async function register(): Promise<void> {
         .join("; ")}`,
     );
   }
+
+  // Optional: route reported errors to a remote tracker when a webhook
+  // (or Sentry DSN) is configured. Logger sink stays as the default.
+  configureErrorTrackingFromEnv(process.env);
 }

@@ -1,0 +1,99 @@
+// Shared sensitive-data scanner used by case payload validation and
+// receipt export redaction.
+//
+// Patterns are conservative — false positives are preferred over leaking a
+// real credential into a published receipt. When a pattern fires we either
+// reject (server-side validation) or replace the match with a redaction
+// marker (export pipeline).
+
+export type SensitivePattern = {
+  pattern: RegExp;
+  message: string;
+  marker: string;
+};
+
+export const SENSITIVE_PATTERNS: SensitivePattern[] = [
+  {
+    pattern: /(?:0x)?[0-9a-fA-F]{64}/g,
+    message: "Potential 32-byte private key",
+    marker: "[REDACTED:private-key-like]",
+  },
+  {
+    pattern: /sk_(?:live|test)_[0-9a-zA-Z]{24}/g,
+    message: "Stripe Secret API Key",
+    marker: "[REDACTED:stripe-key]",
+  },
+  {
+    pattern: /AIzaSy[0-9a-zA-Z\-_]{33}/g,
+    message: "Google API Key",
+    marker: "[REDACTED:google-api-key]",
+  },
+  {
+    pattern: /authorization:\s*(?:bearer|basic)\s+[0-9a-zA-Z+/=_-]+/gi,
+    message: "Authorization header",
+    marker: "[REDACTED:authorization-header]",
+  },
+  {
+    pattern: /AKIA[0-9A-Z]{16}/g,
+    message: "AWS Access Key ID",
+    marker: "[REDACTED:aws-key]",
+  },
+  {
+    pattern: /gh[pos]_[0-9a-zA-Z]{36}/g,
+    message: "GitHub token",
+    marker: "[REDACTED:github-token]",
+  },
+  {
+    pattern: /xox[baprs]-[0-9a-zA-Z-]{10,}/g,
+    message: "Slack token",
+    marker: "[REDACTED:slack-token]",
+  },
+  {
+    pattern: /eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}/g,
+    message: "JWT",
+    marker: "[REDACTED:jwt]",
+  },
+  {
+    pattern: /-----BEGIN (?:RSA |OPENSSH |EC |DSA |PGP )?PRIVATE KEY-----/g,
+    message: "Private key block",
+    marker: "[REDACTED:private-key-block]",
+  },
+  {
+    pattern:
+      /(password|passwd|secret|api[_-]?key)\s*[=:]\s*["']?[A-Za-z0-9!@#$%^&*_\-+=]{8,}["']?/gi,
+    message: "Possible password / secret assignment",
+    marker: "[REDACTED:secret-assignment]",
+  },
+];
+
+export type SensitiveFinding = {
+  message: string;
+};
+
+export function scanText(text: string): SensitiveFinding[] {
+  if (!text) return [];
+  const findings: SensitiveFinding[] = [];
+  for (const { pattern, message } of SENSITIVE_PATTERNS) {
+    // pattern carries the /g flag — clone via fresh RegExp to avoid lastIndex bleed
+    const probe = new RegExp(pattern.source, pattern.flags);
+    if (probe.test(text)) findings.push({ message });
+  }
+  return findings;
+}
+
+export function redactSensitiveText(text: string): {
+  text: string;
+  redactions: string[];
+} {
+  if (!text) return { text, redactions: [] };
+  let out = text;
+  const redactions: string[] = [];
+  for (const { pattern, marker, message } of SENSITIVE_PATTERNS) {
+    const probe = new RegExp(pattern.source, pattern.flags);
+    if (probe.test(out)) {
+      redactions.push(message);
+      out = out.replace(new RegExp(pattern.source, pattern.flags), marker);
+    }
+  }
+  return { text: out, redactions };
+}
