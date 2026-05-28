@@ -15,7 +15,7 @@ if (!CONTRACT || !RPC || !PK) {
 
 const caseId = process.argv[2] ?? "case-rpc-smoke-001";
 const payload = {
-  schema: "slaproof.case.v0",
+  version: "slaproof.case.v0",
   case_id: caseId,
   provider_name: "Smoke RPC",
   chain: "ethereum-mainnet",
@@ -24,7 +24,8 @@ const payload = {
     start_utc: "2026-05-22T10:00:00Z",
     end_utc: "2026-05-22T10:30:00Z",
   },
-  incident_summary: "smoke test",
+  incident_summary:
+    "Sustained 5xx errors 18.6% of requests for 30 minutes during incident window.",
   sla_terms: {
     availability_target: "99.9% monthly",
     error_threshold: "5% for 5+ min",
@@ -36,17 +37,17 @@ const payload = {
     {
       id: "ev-1",
       type: "status_page",
-      title: "smoke",
-      source_url: "https://example.com",
-      submitted_excerpt: "smoke evidence sustained 5xx",
-      hash: "0".repeat(16),
+      title: "Provider status page",
+      source_url: "https://example.com/status",
+      submitted_excerpt: "Provider reports sustained 5xx for 30 min, 18.6% errors.",
+      hash: "",
     },
     {
       id: "ev-2",
       type: "monitoring_summary",
-      title: "smoke probe",
-      submitted_excerpt: "smoke probe 18% failures 30 min",
-      hash: "0".repeat(16),
+      title: "Internal probe",
+      submitted_excerpt: "Probe shows 18% failures sustained 30 min in window.",
+      hash: "",
     },
   ],
 };

@@ -65,6 +65,8 @@ the production roadmap phases instead of semver until a stable release ships.
 - Smoke read script handles "receipt not found" gracefully
 - Wallet hook + tx state machine + submit panel (earlier PRs)
 - Receipt page refresh + contract metadata (earlier PRs)
+- **Live write verified end-to-end**: tx `0x204a31d397363a2151ecfa3218a501ebcc3cdf7d0ee0e5d343d1b0e9c07b221a` on Studionet → receipt `case-rpc-write-001` readable on-chain. Smoke script payload aligned with contract validator (`version` field, empty-hash bypass).
+- Full `genvm-lint check` passes after caching v0.2.16 SDK tarball under the latest-tag name (PR #94).
 
 ### Phase 1 — Local Demo MVP (baseline)
 
@@ -86,7 +88,7 @@ the production roadmap phases instead of semver until a stable release ships.
 |---|---|
 | Phase 0 Design package | 100% |
 | Phase 1 Local Demo MVP | 100% |
-| Phase 2 GenLayer Live MVP | ~95% (live write end-to-end pending operator) |
+| Phase 2 GenLayer Live MVP | 100% (live write end-to-end verified — tx `0x204a31d3…f378e952` on Studionet) |
 | Phase 3 Pilot readiness | ~95% (managed DB blocked, interface ready) |
 | Phase 4 Production hardening | ~98% (Sentry sink + alerting wiring + contract audit pending) |
 | Phase 5 Expansion | 0% (planned) |

@@ -11,6 +11,12 @@ This runbook is for the first live deployment of `SlaProofRpcVerifier`.
 Studionet chain id: `61999`. RPC: `https://studio.genlayer.com/api`.
 Validator round: 5/5 AGREE, status ACCEPTED.
 
+## Verified live writes
+
+| Case id | Tx hash | Decision | Notes |
+|---|---|---|---|
+| `case-rpc-write-001` | `0x204a31d397363a2151ecfa3218a501ebcc3cdf7d0ee0e5d343d1b0e9c07b221a` | `needs_more_evidence` | First successful end-to-end write — submitted via `npm run smoke:genlayer:write`, finalized with `execution_result: SUCCESS`, receipt readable via `npm run smoke:genlayer:read case-rpc-write-001`. |
+
 ## Current Status
 
 The contract package is ready for local deterministic checks:
