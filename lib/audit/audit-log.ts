@@ -11,7 +11,8 @@ export type AuditAction =
   | "case_created"
   | "case_updated"
   | "case_submitted"
-  | "case_failed";
+  | "case_failed"
+  | "evidence_added";
 
 export type AuditEntry = {
   timestamp: string;

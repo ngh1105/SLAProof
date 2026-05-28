@@ -4,9 +4,15 @@
 
 import { validateEnv } from "@/lib/config/env-validation";
 import { log } from "@/lib/observability/logger";
+import { configureErrorTrackingFromEnv } from "@/lib/observability/error-tracking";
+import { reportError } from "@/lib/observability/error-reporter";
 
 export async function register(): Promise<void> {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
+
+  // Wire the remote error sink first so a fail-fast env validation throw
+  // still reaches the tracker before we crash.
+  configureErrorTrackingFromEnv(process.env);
 
   const result = validateEnv(process.env);
   for (const issue of result.issues) {
@@ -18,11 +24,13 @@ export async function register(): Promise<void> {
   }
 
   if (!result.ok && process.env.NODE_ENV === "production") {
-    throw new Error(
+    const err = new Error(
       `Environment validation failed: ${result.issues
         .filter((i) => i.level === "error")
         .map((i) => `${i.key} ${i.reason}`)
         .join("; ")}`,
     );
+    reportError(err, { phase: "boot_env_validation" });
+    throw err;
   }
 }

@@ -2,7 +2,7 @@
 
 Status legend: ✅ done · 🟡 partial · 🔴 not started
 
-Last reviewed: 2026-05-27
+Last reviewed: 2026-05-28
 
 ## Product Claims
 
@@ -20,7 +20,9 @@ Last reviewed: 2026-05-27
 - ✅ Evidence uploads and excerpts have size limits.
 - ✅ Auth protects non-public workspaces (PILOT_TOKEN cookie + middleware).
 - ✅ Rate limits protect case creation and login (token-bucket, in-memory).
-- 🟡 Receipt exports redact private workspace metadata (manual review only).
+- ✅ Receipt exports redact private workspace metadata (automated
+  pattern-based scrub via `redactReceiptForExport`; manual review
+  remains recommended for unusual incident notes).
 - ✅ Dependencies are audited in CI (`npm audit --omit=dev --audit-level=high`).
 - ✅ Default security headers + report-only CSP + violation report endpoint.
 - ✅ CodeQL static analysis workflow (manual + weekly cron).
@@ -43,8 +45,10 @@ Last reviewed: 2026-05-27
 - ✅ Delayed finalization has a clear pending state.
 - ✅ Contract read-back is required before showing finalized receipt.
 - ✅ App has health endpoint (`/api/health`).
-- 🟡 App has error tracking (logger sink + reportError abstraction; no Sentry
-  wire-up yet — see `docs/runbooks/error-tracking-integration.md`).
+- ✅ App has error tracking (logger sink + reportError abstraction +
+  optional remote webhook/Sentry sink wired via
+  `instrumentation.ts` — `ERROR_WEBHOOK_URL` / `SENTRY_DSN`; runbook in
+  `docs/runbooks/error-tracking-integration.md`).
 - ✅ App has structured logs for case lifecycle events.
 - ✅ Branded 404 + 500 error pages with reportError integration.
 - ✅ Startup env validation via instrumentation hook (fail-fast in production).
@@ -87,7 +91,8 @@ Last reviewed: 2026-05-27
 ## Observability
 
 - ✅ Track case created (counter + audit log).
-- 🟡 Track evidence added (covered by case_created; no per-evidence event).
+- ✅ Track evidence added (per-evidence `evidence_added` audit event +
+  `evidence_added` counter on case creation).
 - ✅ Track submit started (verifier_submit_ok / errors).
 - ✅ Track GenLayer transaction accepted (verifier_wait_ok).
 - ✅ Track receipt read success.

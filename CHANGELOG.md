@@ -6,6 +6,25 @@ the production roadmap phases instead of semver until a stable release ships.
 
 ## Unreleased
 
+### Checklist closeout
+
+- Per-evidence audit events emitted on case creation (`evidence_added`)
+  with metric counter (closes Observability checklist gap).
+- Receipt JSON + Markdown export pipeline runs every receipt through
+  `redactReceiptForExport`, which scans `validatorReasoning`,
+  `recommendedNextAction`, `violatedClauses`, and evidence citations
+  for known credential patterns and replaces matches with deterministic
+  `[REDACTED:<kind>]` markers; redactions bump the
+  `export_receipt_redacted` counter and log a structured warning
+  (closes manual-review export gate in production readiness checklist).
+- Optional remote error sink (`ERROR_WEBHOOK_URL` / `SENTRY_DSN`)
+  wired through `instrumentation.ts` so `reportError()` can ship to
+  Sentry, Datadog, or any compatible ingest endpoint without changing
+  call sites; default logger sink remains the fallback.
+- Shared sensitive-data scanner (`lib/security/sensitive-scanner.ts`)
+  consolidates the credential pattern list used by case payload
+  validation and export redaction.
+
 ### Phase 4 — Production hardening (in progress)
 
 - Token-bucket rate limiter on `createCaseAction` (PR #17)

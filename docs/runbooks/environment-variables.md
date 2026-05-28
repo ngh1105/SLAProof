@@ -34,6 +34,10 @@ when adding new variables.
 | `NEXT_TELEMETRY_DISABLED` | (Next default) | Set to `1` to disable Next.js telemetry |
 | `BUILD_TIME` | `unknown` | Surfaced via `/api/version`. Inject at build time. |
 | `GIT_COMMIT_SHA` / `VERCEL_GIT_COMMIT_SHA` | `unknown` | Surfaced via `/api/version`. |
+| `ERROR_WEBHOOK_URL` | unset | Remote sink for `reportError()`. JSON POST to any compatible ingestion endpoint. Falls back to logger-only when unset. |
+| `SENTRY_DSN` | unset | Alternative source for the remote error sink URL. |
+| `SENTRY_ENVIRONMENT` | `NODE_ENV` | Override environment label sent with error payloads. |
+| `SLAPROOF_RELEASE` / `NEXT_PUBLIC_SLAPROOF_COMMIT_SHA` | unset | Release/build identifier sent with error payloads. |
 
 ## Server-side only (never `NEXT_PUBLIC_*`)
 
