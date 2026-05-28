@@ -17,13 +17,13 @@ export function SubmitPanel({ slaCase }: Props) {
   const router = useRouter();
 
   async function onSubmit() {
-    if (wallet.status.kind !== "connected" || !wallet.provider) return;
+    if (wallet.status.kind !== "connected") return;
     setBusy(true);
     dispatch({ type: "START" });
     try {
       const { txHash } = await genlayerVerifierAdapter.submitCase!({
         slaCase,
-        walletClient: wallet.provider,
+        walletClient: wallet.status.account,
       });
       dispatch({ type: "SIGNED", txHash });
       dispatch({ type: "AWAIT" });

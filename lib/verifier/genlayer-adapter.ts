@@ -136,6 +136,26 @@ async function createWriteClient(
   }) as GenLayerWriteClient;
 }
 
+// Browser-wallet write client. genlayer-js accepts a bare address string for
+// the `account` field — when set this way, signing is delegated to the
+// injected wallet (window.ethereum / window.genlayer) via the standard
+// EIP-1193 personal_sign / eth_sendTransaction flow.
+async function createBrowserWriteClient(
+  rpcUrl: string,
+  account: `0x${string}`,
+): Promise<GenLayerWriteClient> {
+  const [{ createClient }, { studionet }] = await Promise.all([
+    import("genlayer-js"),
+    import("genlayer-js/chains"),
+  ]);
+
+  return createClient({
+    chain: studionet,
+    endpoint: rpcUrl,
+    account,
+  }) as GenLayerWriteClient;
+}
+
 function getContractAddress(readiness: VerifierReadiness): `0x${string}` {
   const contractAddress = readiness.contractAddress;
   if (!contractAddress || !/^0x[0-9a-fA-F]{40}$/.test(contractAddress)) {
@@ -370,14 +390,31 @@ export function createGenLayerVerifier(
         increment("verifier_submit_not_ready");
         throw new VerifierError("RPC_FAILED", readiness.issues.join(" "));
       }
-      const client = input.walletClient as {
-        writeContract(args: {
-          address: `0x${string}`;
-          functionName: string;
-          args?: unknown[];
-          value: bigint;
-        }): Promise<unknown>;
-      };
+
+      // Browser flow passes the connected wallet address as walletClient.
+      // CLI / smoke flow can still pass a pre-built genlayer-js client.
+      let client: GenLayerWriteClient;
+      if (
+        typeof input.walletClient === "string" &&
+        /^0x[0-9a-fA-F]{40}$/.test(input.walletClient)
+      ) {
+        try {
+          client = await createBrowserWriteClient(
+            readiness.rpcUrl!,
+            input.walletClient as `0x${string}`,
+          );
+        } catch (err) {
+          increment("verifier_submit_rpc_failed");
+          throw new VerifierError(
+            "RPC_FAILED",
+            "Failed to initialize GenLayer write client.",
+            err,
+          );
+        }
+      } else {
+        client = input.walletClient as GenLayerWriteClient;
+      }
+
       const submittedPayload = toContractCaseJson(input.slaCase);
       try {
         const raw = await client.writeContract({
