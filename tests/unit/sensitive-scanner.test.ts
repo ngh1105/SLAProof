@@ -51,4 +51,23 @@ describe("redactSensitiveText", () => {
     const r = redactSensitiveText("hash 0xabc123");
     expect(r.redactions).toEqual([]);
   });
+
+  it("redacts a bare 64-hex private key but preserves whitespace boundaries", () => {
+    const r = redactSensitiveText(
+      `pk 0x${"a".repeat(64)} continues`,
+    );
+    expect(r.text).toContain("[REDACTED:private-key-like]");
+    expect(r.text.startsWith("pk ")).toBe(true);
+    expect(r.text.endsWith(" continues")).toBe(true);
+    expect(r.redactions).toEqual(["Potential 32-byte Private Key"]);
+  });
+
+  it("does NOT redact a 64-hex transaction hash embedded inside an identifier", () => {
+    // Real receipts cite tx ids inline, e.g. via Markdown link slugs or
+    // file paths — those should survive the export scrub untouched.
+    const txish = `0x${"d".repeat(64)}`;
+    const r = redactSensitiveText(`tx-hash:${txish}-confirmed`);
+    expect(r.redactions).toEqual([]);
+    expect(r.text).toBe(`tx-hash:${txish}-confirmed`);
+  });
 });

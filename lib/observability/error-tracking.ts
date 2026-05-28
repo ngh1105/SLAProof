@@ -75,7 +75,20 @@ export function configureErrorTrackingFromEnv(env: NodeJS.ProcessEnv = process.e
   });
   setErrorSink(sink);
   log.info("error_tracking_enabled", {
-    target: url.replace(/(?<=:\/\/)[^@/]+@/, "***@"),
+    target: maskSinkUrl(url),
   });
   return true;
+}
+
+// Strip both userinfo (`user:pass@`) and query string (`?token=...`)
+// before logging the sink target so DSNs and webhook tokens never
+// land in plaintext logs.
+function maskSinkUrl(raw: string): string {
+  try {
+    const u = new URL(raw);
+    const userMasked = u.username ? `${u.origin.replace(`${u.protocol}//`, `${u.protocol}//***@`)}` : u.origin;
+    return u.search ? `${userMasked}${u.pathname}?<redacted>` : `${userMasked}${u.pathname}`;
+  } catch {
+    return raw.replace(/(?<=:\/\/)[^@/]+@/, "***@").replace(/\?.*$/, "?<redacted>");
+  }
 }

@@ -16,7 +16,7 @@ describe("buildRemoteErrorSink", () => {
     const calls: Array<{ url: string; init: RequestInit | undefined }> = [];
     const fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
       calls.push({ url, init });
-      return new Response("", { status: 204 });
+      return new Response(null, { status: 204 });
     }) as unknown as typeof fetch;
 
     const sink = buildRemoteErrorSink({
@@ -59,7 +59,7 @@ describe("buildRemoteErrorSink", () => {
     const calls: Array<{ body: unknown }> = [];
     const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {
       calls.push({ body: JSON.parse(String(init?.body ?? "{}")) });
-      return new Response("", { status: 204 });
+      return new Response(null, { status: 204 });
     }) as unknown as typeof fetch;
     setErrorSink(
       buildRemoteErrorSink({ url: "https://example.test/x", fetchImpl }),

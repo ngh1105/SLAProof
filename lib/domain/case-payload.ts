@@ -1,65 +1,14 @@
 import type { EvidenceItem, EvidenceType, SlaCase } from "./types";
 import { validateSlaCase } from "./validation";
+import { scanText as scanForSensitive } from "@/lib/security/sensitive-scanner";
 
-const SENSITIVE_PATTERNS: Array<{ pattern: RegExp; message: string }> = [
-  {
-    pattern: /(?:^|\s|["'])(?:0x)?[0-9a-fA-F]{64}(?:\s|["']|$)/,
-    message:
-      "Potential 32-byte Private Key detected. Do NOT submit private keys.",
-  },
-  {
-    pattern: /sk_(?:live|test)_[0-9a-zA-Z]{24}/,
-    message: "Stripe Secret API Key detected. Redact credentials before submission.",
-  },
-  {
-    pattern: /AIzaSy[0-9a-zA-Z\-_]{33}/,
-    message: "Google API Key detected. Redact credentials before submission.",
-  },
-  {
-    pattern: /authorization:\s*(?:bearer|basic)\s+[0-9a-zA-Z+/=_-]+/i,
-    message: "Authorization Token detected. Redact headers before submission.",
-  },
-  {
-    pattern: /AKIA[0-9A-Z]{16}/,
-    message: "AWS Access Key ID detected. Redact credentials before submission.",
-  },
-  {
-    pattern: /ghp_[0-9a-zA-Z]{36}/,
-    message: "GitHub personal access token detected. Redact credentials before submission.",
-  },
-  {
-    pattern: /gho_[0-9a-zA-Z]{36}/,
-    message: "GitHub OAuth token detected. Redact credentials before submission.",
-  },
-  {
-    pattern: /ghs_[0-9a-zA-Z]{36}/,
-    message: "GitHub Apps token detected. Redact credentials before submission.",
-  },
-  {
-    pattern: /xox[baprs]-[0-9a-zA-Z-]{10,}/,
-    message: "Slack token detected. Redact credentials before submission.",
-  },
-  {
-    pattern: /eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}/,
-    message: "JWT detected. Redact tokens before submission.",
-  },
-  {
-    pattern: /-----BEGIN (?:RSA |OPENSSH |EC |DSA |PGP )?PRIVATE KEY-----/,
-    message: "Private key block detected. Do NOT submit private keys.",
-  },
-  {
-    pattern: /(?:password|passwd|secret|api[_-]?key)\s*[=:]\s*["']?[A-Za-z0-9!@#$%^&*_\-+=]{8,}["']?/i,
-    message: "Possible password / secret assignment detected. Redact before submission.",
-  },
-];
-
+// Reuse the shared credential pattern list so receipt-export redaction
+// and case-payload validation cannot drift apart. The wrapper preserves
+// the human-friendly suffix the case-creation UI used to surface.
 function scanText(text: string): string[] {
-  if (!text) return [];
-  const findings: string[] = [];
-  for (const { pattern, message } of SENSITIVE_PATTERNS) {
-    if (pattern.test(text)) findings.push(message);
-  }
-  return findings;
+  return scanForSensitive(text).map(
+    ({ message }) => `${message} detected. Redact credentials before submission.`,
+  );
 }
 
 export function scanCaseForSensitiveData(slaCase: SlaCase): string[] {

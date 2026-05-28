@@ -14,8 +14,11 @@ export type SensitivePattern = {
 
 export const SENSITIVE_PATTERNS: SensitivePattern[] = [
   {
-    pattern: /(?:0x)?[0-9a-fA-F]{64}/g,
-    message: "Potential 32-byte private key",
+    // Word-boundary lookbehind/lookahead so we don't redact a 64-hex tx hash
+    // embedded in a longer identifier (e.g. URL slug or compound id) and so
+    // the boundary characters survive the replace.
+    pattern: /(?<=^|[\s"'(])(?:0x)?[0-9a-fA-F]{64}(?=[\s"')]|$)/g,
+    message: "Potential 32-byte Private Key",
     marker: "[REDACTED:private-key-like]",
   },
   {
@@ -40,7 +43,7 @@ export const SENSITIVE_PATTERNS: SensitivePattern[] = [
   },
   {
     pattern: /gh[pos]_[0-9a-zA-Z]{36}/g,
-    message: "GitHub token",
+    message: "GitHub personal access / OAuth / Apps token",
     marker: "[REDACTED:github-token]",
   },
   {
@@ -50,7 +53,7 @@ export const SENSITIVE_PATTERNS: SensitivePattern[] = [
   },
   {
     pattern: /eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}/g,
-    message: "JWT",
+    message: "JWT detected",
     marker: "[REDACTED:jwt]",
   },
   {
@@ -70,13 +73,17 @@ export type SensitiveFinding = {
   message: string;
 };
 
+// Each call gets a fresh regex so the /g flag's `lastIndex` state never
+// leaks across pattern probes.
+function freshRegex(p: RegExp): RegExp {
+  return new RegExp(p.source, p.flags);
+}
+
 export function scanText(text: string): SensitiveFinding[] {
   if (!text) return [];
   const findings: SensitiveFinding[] = [];
   for (const { pattern, message } of SENSITIVE_PATTERNS) {
-    // pattern carries the /g flag — clone via fresh RegExp to avoid lastIndex bleed
-    const probe = new RegExp(pattern.source, pattern.flags);
-    if (probe.test(text)) findings.push({ message });
+    if (freshRegex(pattern).test(text)) findings.push({ message });
   }
   return findings;
 }
@@ -89,10 +96,11 @@ export function redactSensitiveText(text: string): {
   let out = text;
   const redactions: string[] = [];
   for (const { pattern, marker, message } of SENSITIVE_PATTERNS) {
-    const probe = new RegExp(pattern.source, pattern.flags);
-    if (probe.test(out)) {
+    const re = freshRegex(pattern);
+    if (re.test(out)) {
       redactions.push(message);
-      out = out.replace(new RegExp(pattern.source, pattern.flags), marker);
+      // Re-create regex because /g `test()` advanced `lastIndex`.
+      out = out.replace(freshRegex(pattern), marker);
     }
   }
   return { text: out, redactions };
