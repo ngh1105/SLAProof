@@ -53,11 +53,16 @@ export const SENSITIVE_PATTERNS: SensitivePattern[] = [
   },
   {
     pattern: /eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}/g,
-    message: "JWT detected",
+    message: "JWT",
     marker: "[REDACTED:jwt]",
   },
   {
-    pattern: /-----BEGIN (?:RSA |OPENSSH |EC |DSA |PGP )?PRIVATE KEY-----/g,
+    // Match the entire PEM block including the END marker so the body and
+    // trailer never survive into an exported receipt. `[\s\S]*?` is lazy and
+    // the `|$` fallback handles truncated logs that ship the header without
+    // a closing marker.
+    pattern:
+      /-----BEGIN (?:RSA |OPENSSH |EC |DSA |PGP )?PRIVATE KEY-----[\s\S]*?(?:-----END (?:RSA |OPENSSH |EC |DSA |PGP )?PRIVATE KEY-----|$)/g,
     message: "Private key block",
     marker: "[REDACTED:private-key-block]",
   },

@@ -39,7 +39,27 @@ describe("redactSensitiveText", () => {
     expect(matches.length).toBe(2);
   });
 
-  it("redacts PEM private key blocks", () => {
+  it("redacts a complete PEM private key block including body and END", () => {
+    const r = redactSensitiveText(
+      [
+        "log:",
+        "-----BEGIN RSA PRIVATE KEY-----",
+        "MIIEpAIBAAKCAQEA0aSfakeBodyLineForTestUseOnly",
+        "AnotherFakeBodyLineForTestPurposesOnly",
+        "-----END RSA PRIVATE KEY-----",
+        "trailing",
+      ].join("\n"),
+    );
+    expect(r.text).toContain("[REDACTED:private-key-block]");
+    expect(r.text).not.toContain("BEGIN RSA PRIVATE KEY");
+    expect(r.text).not.toContain("END RSA PRIVATE KEY");
+    expect(r.text).not.toContain("FakeBodyLine");
+    // Surrounding context survives untouched.
+    expect(r.text.startsWith("log:")).toBe(true);
+    expect(r.text.endsWith("trailing")).toBe(true);
+  });
+
+  it("redacts a truncated PEM block when END marker is missing", () => {
     const r = redactSensitiveText(
       "log: -----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAA",
     );
