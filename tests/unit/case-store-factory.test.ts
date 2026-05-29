@@ -5,6 +5,7 @@ import { fileCaseStore } from "@/lib/storage/case-store";
 afterEach(() => {
   resetCaseStore();
   delete process.env.SLAPROOF_STORE;
+  delete process.env.DATABASE_URL;
 });
 
 describe("getCaseStore", () => {
