@@ -62,3 +62,33 @@ describe("validateEnv", () => {
     expect(result.issues[0]?.level).toBe("warn");
   });
 });
+
+describe("validateEnv Postgres mode", () => {
+  it("requires DATABASE_URL when SLAPROOF_STORE=postgres", () => {
+    const result = validateEnv({ SLAPROOF_STORE: "postgres" });
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((i) => i.key === "DATABASE_URL")).toBe(true);
+  });
+
+  it("rejects a non-postgres DATABASE_URL", () => {
+    const result = validateEnv({
+      SLAPROOF_STORE: "postgres",
+      DATABASE_URL: "mysql://user:pass@localhost/db",
+    });
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((i) => i.key === "DATABASE_URL")).toBe(true);
+  });
+
+  it("accepts a valid postgres DATABASE_URL", () => {
+    const result = validateEnv({
+      SLAPROOF_STORE: "postgres",
+      DATABASE_URL: "postgres://user:pass@host:5432/db",
+    });
+    expect(result.issues.some((i) => i.key === "DATABASE_URL")).toBe(false);
+  });
+
+  it("does not require DATABASE_URL when SLAPROOF_STORE is unset (file mode)", () => {
+    const result = validateEnv({});
+    expect(result.issues.some((i) => i.key === "DATABASE_URL")).toBe(false);
+  });
+});
