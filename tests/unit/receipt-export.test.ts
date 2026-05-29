@@ -43,8 +43,8 @@ describe("exportReceiptJson", () => {
 describe("exportReceiptMarkdown", () => {
   afterEach(() => resetMetrics());
 
-  it("includes decision, confidence, hash, clauses, citations, reasoning", () => {
-    const md = exportReceiptMarkdown(sample);
+  it("includes decision, confidence, hash, clauses, citations, reasoning", async () => {
+    const md = await exportReceiptMarkdown(sample);
     expect(md).toContain("# SLAProof Receipt:");
     expect(md).toContain("Decision: breach");
     expect(md).toContain("Confidence: 88%");
@@ -55,21 +55,21 @@ describe("exportReceiptMarkdown", () => {
     expect(md).toContain(sample.recommendedNextAction);
   });
 
-  it("renders 'None' when no violated clauses", () => {
-    const md = exportReceiptMarkdown({
+  it("renders 'None' when no violated clauses", async () => {
+    const md = await exportReceiptMarkdown({
       ...sample,
       violatedClauses: [],
     });
     expect(md).toMatch(/## Violated Clauses\n- None/);
   });
 
-  it("falls back to caseId when seed case is missing", () => {
-    const md = exportReceiptMarkdown({ ...sample, caseId: "case-not-seeded" });
+  it("falls back to caseId when seed case is missing", async () => {
+    const md = await exportReceiptMarkdown({ ...sample, caseId: "case-not-seeded" });
     expect(md).toContain("# SLAProof Receipt: case-not-seeded");
   });
 
-  it("bumps export_receipt_markdown counter", () => {
-    exportReceiptMarkdown(sample);
+  it("bumps export_receipt_markdown counter", async () => {
+    await exportReceiptMarkdown(sample);
     expect(snapshot().counters.export_receipt_markdown).toBe(1);
   });
 });

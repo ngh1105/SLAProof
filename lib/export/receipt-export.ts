@@ -22,10 +22,10 @@ export function exportReceiptJson(receipt: Receipt): string {
   return `${JSON.stringify(safe, null, 2)}\n`;
 }
 
-export function exportReceiptMarkdown(receipt: Receipt): string {
+export async function exportReceiptMarkdown(receipt: Receipt): Promise<string> {
   increment("export_receipt_markdown");
   const safe = prepareForExport(receipt);
-  const slaCase = getDemoCase(safe.caseId);
+  const slaCase = await getDemoCase(safe.caseId);
   const title = slaCase?.title ?? safe.caseId;
   const citations = safe.evidenceCitations
     .map((citation) => `- ${citation.evidenceId}: ${citation.finding}`)

@@ -14,7 +14,7 @@ type ReceiptPageProps = {
 
 export default async function ReceiptPage({ params }: ReceiptPageProps) {
   const { caseId } = await params;
-  const slaCase = getDemoCase(caseId);
+  const slaCase = await getDemoCase(caseId);
 
   if (!slaCase) notFound();
 
@@ -25,7 +25,7 @@ export default async function ReceiptPage({ params }: ReceiptPageProps) {
   const receipt = storedReceipt ?? verifyCaseLocally(slaCase);
   const submittedPayload = toContractCaseJson(slaCase);
   const markdown = hasStoredReceipt
-    ? exportReceiptMarkdown(receipt)
+    ? await exportReceiptMarkdown(receipt)
     : "Receipt pending explicit submission and read-back.\n";
   const json = hasStoredReceipt
     ? exportReceiptJson(receipt)
@@ -34,7 +34,7 @@ export default async function ReceiptPage({ params }: ReceiptPageProps) {
   async function submitCase() {
     "use server";
 
-    const submittedCase = getDemoCase(caseId);
+    const submittedCase = await getDemoCase(caseId);
     if (!submittedCase) notFound();
 
     await getVerifier().verifyCase(submittedCase);

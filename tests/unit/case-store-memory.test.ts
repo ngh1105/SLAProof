@@ -24,29 +24,29 @@ const sample: SlaCase = {
 };
 
 describe("createInMemoryCaseStore", () => {
-  it("starts empty by default", () => {
+  it("starts empty by default", async () => {
     const store = createInMemoryCaseStore();
-    expect(store.list()).toEqual([]);
-    expect(store.get("missing")).toBeUndefined();
+    expect(await store.list()).toEqual([]);
+    expect(await store.get("missing")).toBeUndefined();
   });
 
-  it("seeds initial cases", () => {
+  it("seeds initial cases", async () => {
     const store = createInMemoryCaseStore([sample]);
-    expect(store.list()).toHaveLength(1);
-    expect(store.get(sample.id)?.title).toBe("Test case");
+    expect(await store.list()).toHaveLength(1);
+    expect((await store.get(sample.id))?.title).toBe("Test case");
   });
 
-  it("save inserts new case", () => {
+  it("save inserts new case", async () => {
     const store = createInMemoryCaseStore();
-    store.save(sample);
-    expect(store.list()).toHaveLength(1);
-    expect(store.get(sample.id)).toBeDefined();
+    await store.save(sample);
+    expect(await store.list()).toHaveLength(1);
+    expect(await store.get(sample.id)).toBeDefined();
   });
 
-  it("save updates existing case", () => {
+  it("save updates existing case", async () => {
     const store = createInMemoryCaseStore([sample]);
-    store.save({ ...sample, title: "Updated" });
-    expect(store.list()).toHaveLength(1);
-    expect(store.get(sample.id)?.title).toBe("Updated");
+    await store.save({ ...sample, title: "Updated" });
+    expect(await store.list()).toHaveLength(1);
+    expect((await store.get(sample.id))?.title).toBe("Updated");
   });
 });

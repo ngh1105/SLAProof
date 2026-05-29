@@ -22,7 +22,7 @@ export const mockVerifierAdapter: SlaVerifier = {
     };
   },
   async getReceipt(caseId: string): Promise<Receipt | null> {
-    const slaCase = getDemoCase(caseId);
+    const slaCase = await getDemoCase(caseId);
     return slaCase ? verifyCaseLocally(slaCase) : null;
   },
 };

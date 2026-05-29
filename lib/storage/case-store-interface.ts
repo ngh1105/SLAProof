@@ -5,11 +5,12 @@ import type { SlaCase } from "@/lib/domain/types";
  * implementation can be swapped for a managed database in production
  * without touching callers.
  *
- * Methods are intentionally synchronous for the pilot. When moving to a
- * networked store, replace with the async variant in `case-store-async.ts`.
+ * Methods are async: a networked store (Postgres) cannot satisfy a
+ * synchronous contract. The file and in-memory stores wrap their
+ * synchronous logic in resolved promises.
  */
 export interface CaseStore {
-  list(): SlaCase[];
-  get(caseId: string): SlaCase | undefined;
-  save(slaCase: SlaCase): void;
+  list(): Promise<SlaCase[]>;
+  get(caseId: string): Promise<SlaCase | undefined>;
+  save(slaCase: SlaCase): Promise<void>;
 }

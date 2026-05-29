@@ -1,23 +1,16 @@
-import { getDemoCases as getStoreCases, getDemoCase as getStoreCase, saveDemoCase as saveStoreCase } from "@/lib/storage/case-store";
+import { fileCaseStore } from "@/lib/storage/case-store";
 import type { SlaCase } from "./types";
 
-// Dynamic in-place mutated array for 100% backward compatibility with static imports
-export const demoCases: SlaCase[] = [];
-
-export function refreshDemoCases(): void {
-  const fresh = getStoreCases();
-  demoCases.length = 0;
-  demoCases.push(...fresh);
+// Async façade over the configured case store. Server Components and Server
+// Actions await these. Storage backend selection lives in the store layer.
+export async function getDemoCases(): Promise<SlaCase[]> {
+  return fileCaseStore.list();
 }
 
-// Initial populate
-refreshDemoCases();
-
-export function getDemoCase(caseId: string): SlaCase | undefined {
-  return getStoreCase(caseId);
+export async function getDemoCase(caseId: string): Promise<SlaCase | undefined> {
+  return fileCaseStore.get(caseId);
 }
 
-export function saveDemoCase(slaCase: SlaCase): void {
-  saveStoreCase(slaCase);
-  refreshDemoCases(); // update the in-place array
+export async function saveDemoCase(slaCase: SlaCase): Promise<void> {
+  await fileCaseStore.save(slaCase);
 }

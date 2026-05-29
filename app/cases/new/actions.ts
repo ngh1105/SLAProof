@@ -53,7 +53,7 @@ export async function createCaseAction(input: unknown): Promise<CreateCaseResult
   }
 
   try {
-    saveDemoCase(validated.case);
+    await saveDemoCase(validated.case);
     appendAudit({
       action: "case_created",
       caseId: validated.case.id,

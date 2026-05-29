@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, Clock, FileCheck2, ServerCog } from "lucide-react";
-import { demoCases } from "@/lib/domain/fixtures";
+import { getDemoCases } from "@/lib/domain/fixtures";
 import { formatUtcRange } from "@/lib/domain/validation";
 import { getVerifierReadiness } from "@/lib/verifier";
 import { verifyCaseLocally } from "@/lib/verifier/mock-verifier";
@@ -13,8 +13,9 @@ const decisionLabels: Record<VerdictDecision, string> = {
   needs_more_evidence: "Needs evidence",
 };
 
-export default function Home() {
+export default async function Home() {
   const readiness = getVerifierReadiness();
+  const demoCases = await getDemoCases();
   const receipts = demoCases.map((slaCase) => verifyCaseLocally(slaCase));
   const breachCount = receipts.filter((receipt) => receipt.decision === "breach").length;
   const readyCount = demoCases.filter((slaCase) => slaCase.status === "ready").length;
