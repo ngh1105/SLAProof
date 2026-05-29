@@ -7,7 +7,7 @@ const DB_DIR = path.join(process.cwd(), ".data");
 const DB_PATH = path.join(DB_DIR, "db.json");
 const LEGACY_DB_PATH = path.join(process.cwd(), "lib", "storage", "db.json");
 
-const initialDemoCases: SlaCase[] = [
+export const initialDemoCases: SlaCase[] = [
   {
     id: "case-rpc-breach-001",
     title: "Ethereum read endpoint sustained 5xx errors",
