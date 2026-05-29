@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getVerifierReadiness } from "@/lib/verifier";
+import { pingDatabase } from "@/lib/storage/health-ping";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,10 @@ export type HealthStatus = {
     networkLabel?: string;
     issues: string[];
   };
+  database: {
+    checked: boolean;
+    ok: boolean;
+  };
   node: string;
 };
 
@@ -21,8 +26,9 @@ const startTime = Date.now();
 
 export async function GET() {
   const readiness = getVerifierReadiness();
+  const db = await pingDatabase();
   const status: HealthStatus = {
-    status: readiness.ready ? "ok" : "degraded",
+    status: readiness.ready && db.ok ? "ok" : "degraded",
     timestamp: new Date().toISOString(),
     uptime: Math.floor((Date.now() - startTime) / 1000),
     version: process.env.npm_package_version ?? "0.1.0",
@@ -32,6 +38,7 @@ export async function GET() {
       networkLabel: readiness.networkLabel,
       issues: readiness.issues,
     },
+    database: { checked: db.checked, ok: db.ok },
     node: process.version,
   };
 
