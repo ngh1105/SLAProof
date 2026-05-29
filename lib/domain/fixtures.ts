@@ -1,16 +1,16 @@
-import { fileCaseStore } from "@/lib/storage/case-store";
+import { getCaseStore } from "@/lib/storage/case-store-factory";
 import type { SlaCase } from "./types";
 
 // Async façade over the configured case store. Server Components and Server
-// Actions await these. Storage backend selection lives in the store layer.
+// Actions await these. Backend selection lives in the factory.
 export async function getDemoCases(): Promise<SlaCase[]> {
-  return fileCaseStore.list();
+  return getCaseStore().list();
 }
 
 export async function getDemoCase(caseId: string): Promise<SlaCase | undefined> {
-  return fileCaseStore.get(caseId);
+  return getCaseStore().get(caseId);
 }
 
 export async function saveDemoCase(slaCase: SlaCase): Promise<void> {
-  await fileCaseStore.save(slaCase);
+  await getCaseStore().save(slaCase);
 }
