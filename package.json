@@ -26,7 +26,8 @@
     "ops:report": "node scripts/ops-report.mjs",
     "test:e2e": "playwright test",
     "verify:demo": "npm run lint && npm run typecheck && npm test && npm run build",
-    "readiness:check": "node scripts/readiness-check.mjs"
+    "readiness:check": "node scripts/readiness-check.mjs",
+    "db:migrate": "node scripts/migrate.mjs"
   },
   "repository": {
     "type": "git",
