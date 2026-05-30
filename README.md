@@ -92,6 +92,7 @@ npm run smoke:genlayer:write
 - [Incident Response Runbook](docs/runbooks/incident-response.md)
 - [Live Demo Script](docs/runbooks/live-demo-script.md)
 - [Pilot Operator Guide](docs/runbooks/pilot-operator-guide.md)
+- [Postgres Deployment Runbook](docs/runbooks/postgres-deployment.md)
 - [Evidence Redaction Checklist](docs/templates/evidence-redaction-checklist.md)
 - [Vendor Escalation Template](docs/templates/vendor-escalation.md)
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { demoCases, getDemoCase } from "@/lib/domain/fixtures";
+import { getDemoCases, getDemoCase } from "@/lib/storage/case-store";
 import { hashEvidence, hashReceipt } from "@/lib/domain/hash";
 import { formatUtcRange, validateSlaCase } from "@/lib/domain/validation";
 import { exportReceiptJson, exportReceiptMarkdown } from "@/lib/export/receipt-export";
@@ -10,6 +10,7 @@ import { ExecutionResult, TransactionStatus } from "genlayer-js/types";
 
 describe("SLAProof domain fixtures", () => {
   it("exposes demo cases for all local verdict states", () => {
+    const demoCases = getDemoCases();
     const decisions = new Set(demoCases.map((slaCase) => inferMockDecision(slaCase)));
 
     expect(decisions).toEqual(
@@ -18,6 +19,7 @@ describe("SLAProof domain fixtures", () => {
   });
 
   it("keeps required seeded case fields valid where ready", () => {
+    const demoCases = getDemoCases();
     for (const slaCase of demoCases.filter((item) => item.status === "ready")) {
       const result = validateSlaCase(slaCase);
       expect(result.errors).toEqual([]);
@@ -390,12 +392,12 @@ describe("mock verifier", () => {
     );
   });
 
-  it("exports JSON and Markdown with key receipt fields", () => {
+  it("exports JSON and Markdown with key receipt fields", async () => {
     const receipt = verifyCaseLocally(getDemoCase("case-rpc-breach-001")!);
 
     expect(exportReceiptJson(receipt)).toContain('"decision": "breach"');
     expect(exportReceiptJson(receipt)).toContain(receipt.receiptHash);
-    expect(exportReceiptMarkdown(receipt)).toContain("Decision: breach");
-    expect(exportReceiptMarkdown(receipt)).toContain("## Evidence Citations");
+    expect(await exportReceiptMarkdown(receipt)).toContain("Decision: breach");
+    expect(await exportReceiptMarkdown(receipt)).toContain("## Evidence Citations");
   });
 });

@@ -11,13 +11,13 @@ export function createInMemoryCaseStore(seed: SlaCase[] = []): CaseStore {
   for (const c of seed) cases.set(c.id, c);
 
   return {
-    list(): SlaCase[] {
+    async list(): Promise<SlaCase[]> {
       return Array.from(cases.values());
     },
-    get(caseId: string): SlaCase | undefined {
+    async get(caseId: string): Promise<SlaCase | undefined> {
       return cases.get(caseId);
     },
-    save(slaCase: SlaCase): void {
+    async save(slaCase: SlaCase): Promise<void> {
       cases.set(slaCase.id, slaCase);
     },
   };

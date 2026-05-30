@@ -7,7 +7,7 @@ const DB_DIR = path.join(process.cwd(), ".data");
 const DB_PATH = path.join(DB_DIR, "db.json");
 const LEGACY_DB_PATH = path.join(process.cwd(), "lib", "storage", "db.json");
 
-const initialDemoCases: SlaCase[] = [
+export const initialDemoCases: SlaCase[] = [
   {
     id: "case-rpc-breach-001",
     title: "Ethereum read endpoint sustained 5xx errors",
@@ -266,14 +266,20 @@ export function saveDemoCase(slaCase: SlaCase): void {
 }
 
 // ----- CaseStore interface adapter -----
-// Wraps the existing function-style API to satisfy the CaseStore contract
-// from case-store-interface.ts. Lets call sites depend on the interface
-// instead of the concrete file-backed module.
+// Wraps the synchronous function-style API to satisfy the async CaseStore
+// contract from case-store-interface.ts. The file store is synchronous under
+// the hood; we wrap each call in a resolved promise.
 
 import type { CaseStore } from "./case-store-interface";
 
 export const fileCaseStore: CaseStore = {
-  list: getDemoCases,
-  get: getDemoCase,
-  save: saveDemoCase,
+  async list(): Promise<SlaCase[]> {
+    return getDemoCases();
+  },
+  async get(caseId: string): Promise<SlaCase | undefined> {
+    return getDemoCase(caseId);
+  },
+  async save(slaCase: SlaCase): Promise<void> {
+    saveDemoCase(slaCase);
+  },
 };

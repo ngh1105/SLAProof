@@ -13,6 +13,7 @@ export type EnvValidationResult = {
 
 const HEX_ADDRESS = /^0x[0-9a-fA-F]{40}$/;
 const URL_PATTERN = /^https?:\/\/[^\s]+$/i;
+const POSTGRES_URL = /^postgres(ql)?:\/\/[^\s]+$/i;
 
 export type EnvSource = Record<string, string | undefined>;
 
@@ -26,6 +27,24 @@ export function validateEnv(env: EnvSource = process.env): EnvValidationResult {
     requireString(env, "NEXT_PUBLIC_GENLAYER_RPC_URL", issues, URL_PATTERN, "must be an http(s) URL");
     requireString(env, "NEXT_PUBLIC_SLAPROOF_NETWORK_LABEL", issues);
     requireNumber(env, "NEXT_PUBLIC_SLAPROOF_CHAIN_ID", issues);
+  }
+
+  const storeMode = (env.SLAPROOF_STORE ?? "file").toLowerCase();
+  if (storeMode !== "file" && storeMode !== "postgres") {
+    issues.push({
+      key: "SLAPROOF_STORE",
+      reason: 'must be "file" or "postgres"',
+      level: "error",
+    });
+  }
+  if (storeMode === "postgres") {
+    requireString(
+      env,
+      "DATABASE_URL",
+      issues,
+      POSTGRES_URL,
+      "must be a postgres:// or postgresql:// connection string",
+    );
   }
 
   if (isProd) {

@@ -13,7 +13,7 @@ type CasePageProps = {
 
 export default async function CasePage({ params }: CasePageProps) {
   const { caseId } = await params;
-  const slaCase = getDemoCase(caseId);
+  const slaCase = await getDemoCase(caseId);
 
   if (!slaCase) notFound();
 
@@ -24,7 +24,7 @@ export default async function CasePage({ params }: CasePageProps) {
   async function submitCase() {
     "use server";
 
-    const submittedCase = getDemoCase(caseId);
+    const submittedCase = await getDemoCase(caseId);
     if (!submittedCase) notFound();
 
     await getVerifier().verifyCase(submittedCase);

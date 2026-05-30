@@ -26,7 +26,9 @@
     "ops:report": "node scripts/ops-report.mjs",
     "test:e2e": "playwright test",
     "verify:demo": "npm run lint && npm run typecheck && npm test && npm run build",
-    "readiness:check": "node scripts/readiness-check.mjs"
+    "readiness:check": "node scripts/readiness-check.mjs",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:seed": "node --import tsx scripts/seed.mjs"
   },
   "repository": {
     "type": "git",
@@ -43,18 +45,21 @@
     "genlayer-js": "^1.1.8",
     "lucide-react": "^1.16.0",
     "next": "^16.2.6",
+    "pg": "^8.21.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
     "@types/node": "^25.9.1",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "@vitest/coverage-v8": "^4.1.7",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.6",
     "playwright": "^1.60.0",
+    "tsx": "^4.22.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.7"
   }

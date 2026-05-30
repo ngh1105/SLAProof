@@ -10,7 +10,7 @@ describe("mockVerifierAdapter", () => {
   });
 
   it("verifyCase returns a deterministic receipt + submittedPayload", async () => {
-    const slaCase = getDemoCase("case-rpc-breach-001")!;
+    const slaCase = (await getDemoCase("case-rpc-breach-001"))!;
     const result = await mockVerifierAdapter.verifyCase(slaCase);
     expect(result.source).toBe("mock");
     expect(result.receipt.caseId).toBe(slaCase.id);
@@ -21,7 +21,7 @@ describe("mockVerifierAdapter", () => {
   });
 
   it("verifyCase is idempotent (same input -> same receipt hash)", async () => {
-    const slaCase = getDemoCase("case-rpc-breach-001")!;
+    const slaCase = (await getDemoCase("case-rpc-breach-001"))!;
     const a = await mockVerifierAdapter.verifyCase(slaCase);
     const b = await mockVerifierAdapter.verifyCase(slaCase);
     expect(a.receipt.receiptHash).toBe(b.receipt.receiptHash);
