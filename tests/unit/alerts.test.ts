@@ -53,7 +53,7 @@ describe("evaluateAlerts", () => {
     const alerts = evaluateAlerts(snapshot, LOW_THRESHOLDS);
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toMatchObject({
-      key: "error_rate",
+      key: "case_create_error_rate",
       level: "critical",
       value: 0.1,
       threshold: 0.05,
@@ -95,9 +95,22 @@ describe("evaluateAlerts", () => {
     const snapshot = buildSnapshot({}, {});
     const alerts = evaluateAlerts(snapshot, LOW_THRESHOLDS);
     expect(alerts).toEqual([]);
-    // Explicit: even with failures recorded but zero successes, rate stays finite.
-    const onlyFailures = buildSnapshot({ case_create_failed: 0 });
-    expect(evaluateAlerts(onlyFailures, LOW_THRESHOLDS)).toEqual([]);
+    // Zero successes AND zero failures → total 0 → guarded, no alert.
+    const noRequests = buildSnapshot({ case_create_failed: 0 });
+    expect(evaluateAlerts(noRequests, LOW_THRESHOLDS)).toEqual([]);
+  });
+
+  it("reports a finite 100% rate when there are failures but zero successes", () => {
+    // 3 failed / (0 ok + 3 failed) = 1.0 — finite, and above the 5% max.
+    const snapshot = buildSnapshot({ case_create_failed: 3 });
+    const alerts = evaluateAlerts(snapshot, LOW_THRESHOLDS);
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toMatchObject({
+      key: "case_create_error_rate",
+      level: "critical",
+      value: 1,
+      threshold: 0.05,
+    });
   });
 
   it("can return multiple alerts at once", () => {
@@ -106,7 +119,7 @@ describe("evaluateAlerts", () => {
       { case_create_ms: hist(9000) },
     );
     const keys = evaluateAlerts(snapshot, LOW_THRESHOLDS).map((a) => a.key).sort();
-    expect(keys).toEqual(["error_rate", "failed_reads", "latency_ms"]);
+    expect(keys).toEqual(["case_create_error_rate", "failed_reads", "latency_ms"]);
   });
 });
 
@@ -137,6 +150,19 @@ describe("resolveThresholds", () => {
       ALERT_ERROR_RATE_MAX: "not-a-number",
       ALERT_LATENCY_MS_MAX: "",
       ALERT_FAILED_READS_MAX: "   ",
+    };
+    expect(resolveThresholds(env)).toEqual({
+      errorRateMax: 0.05,
+      latencyMsMax: 2000,
+      failedReadsMax: 5,
+    });
+  });
+
+  it("falls back to defaults on negative values (misconfiguration footgun)", () => {
+    const env = {
+      ALERT_ERROR_RATE_MAX: "-1",
+      ALERT_LATENCY_MS_MAX: "-500",
+      ALERT_FAILED_READS_MAX: "-3",
     };
     expect(resolveThresholds(env)).toEqual({
       errorRateMax: 0.05,

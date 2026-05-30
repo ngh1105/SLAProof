@@ -50,14 +50,16 @@ const DEFAULT_THRESHOLDS: AlertThresholds = {
   failedReadsMax: 5,
 };
 
-// Parse an env value to a finite number, falling back to `fallback` on
-// missing / empty / whitespace / NaN. Never returns NaN.
+// Parse an env value to a finite, non-negative number, falling back to
+// `fallback` on missing / empty / whitespace / NaN / negative. A negative
+// threshold would make its alert fire on essentially every snapshot, so we
+// treat it as a misconfiguration and fall back. Never returns NaN.
 function numberOrDefault(raw: string | undefined, fallback: number): number {
   if (raw === undefined) return fallback;
   const trimmed = raw.trim();
   if (trimmed === "") return fallback;
   const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : fallback;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
 export function resolveThresholds(
@@ -75,6 +77,8 @@ export function evaluateAlerts(
   thresholds: AlertThresholds = resolveThresholds(),
 ): Alert[] {
   const alerts: Alert[] = [];
+  // Breach policy: a value alerts only when STRICTLY above its threshold;
+  // a value exactly at the threshold does not alert.
 
   const ok = snapshot.counters[REQUEST_OK_KEY] ?? 0;
   const failed = snapshot.counters[REQUEST_FAILED_KEY] ?? 0;
@@ -85,14 +89,14 @@ export function evaluateAlerts(
     const errorRate = failed / totalRequests;
     if (errorRate > thresholds.errorRateMax) {
       alerts.push({
-        key: "error_rate",
+        key: "case_create_error_rate",
         level: "critical",
         value: errorRate,
         threshold: thresholds.errorRateMax,
         message:
-          `Error rate ${(errorRate * 100).toFixed(1)}% exceeds max ` +
+          `Case-creation error rate ${(errorRate * 100).toFixed(1)}% exceeds max ` +
           `${(thresholds.errorRateMax * 100).toFixed(1)}% ` +
-          `(${failed}/${totalRequests} requests failed).`,
+          `(${failed}/${totalRequests} case-creation requests failed).`,
       });
     }
   }
