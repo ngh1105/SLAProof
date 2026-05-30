@@ -88,6 +88,21 @@ describe("prune", () => {
       "slaproof-pg-2026-05-02T00-00-00Z.json",
     ]);
   });
+
+  it("ignores files that are not slaproof-pg-*.json (delete-path safety)", () => {
+    const withStrays = [
+      ...sample,
+      "README.txt",
+      "slaproof-other.txt",
+      "db.json",
+      "slaproof-pg-notjson",
+    ];
+    // Only the two oldest matching backups should ever be returned for deletion.
+    expect(prune(withStrays, 2)).toEqual([
+      "slaproof-pg-2026-05-01T00-00-00Z.json",
+      "slaproof-pg-2026-05-02T00-00-00Z.json",
+    ]);
+  });
 });
 
 describe("backupFilename", () => {
