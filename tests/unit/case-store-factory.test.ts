@@ -29,4 +29,10 @@ describe("getCaseStore", () => {
     expect(store).not.toBe(fileCaseStore);
     expect(typeof store.list).toBe("function");
   });
+
+  it("throws on an unknown SLAPROOF_STORE value", () => {
+    process.env.SLAPROOF_STORE = "postgress";
+    resetCaseStore();
+    expect(() => getCaseStore()).toThrow(/must be "file" or "postgres"/);
+  });
 });

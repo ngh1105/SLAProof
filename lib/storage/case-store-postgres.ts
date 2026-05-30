@@ -15,7 +15,13 @@ export function getPool(connectionString = process.env.DATABASE_URL): Pool {
     throw new Error("DATABASE_URL is required for the Postgres case store.");
   }
   if (!pool) {
-    pool = new Pool({ connectionString });
+    pool = new Pool({
+      connectionString,
+      // Fail fast when a connection can't be acquired (network/DB down).
+      connectionTimeoutMillis: 5000,
+      // Server-side cap so a stuck query can't tie up a pool client forever.
+      statement_timeout: 10000,
+    });
   }
   return pool;
 }

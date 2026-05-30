@@ -12,15 +12,26 @@ type EnvLike = Record<string, string | undefined>;
 export async function pingDatabase(
   env: EnvLike = process.env,
   poolFactory: () => Pool = () => getPool(env.DATABASE_URL),
+  timeoutMs = 2000,
 ): Promise<DbPingResult> {
   const mode = (env.SLAPROOF_STORE ?? "file").toLowerCase();
   if (mode !== "postgres") {
     return { checked: false, ok: true };
   }
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    await poolFactory().query("SELECT 1");
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`DB ping timed out after ${timeoutMs}ms`)),
+        timeoutMs,
+      );
+    });
+    await Promise.race([poolFactory().query("SELECT 1"), timeout]);
     return { checked: true, ok: true };
   } catch (error) {
-    return { checked: true, ok: false, error: (error as Error).message };
+    const message = error instanceof Error ? error.message : String(error);
+    return { checked: true, ok: false, error: message };
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }

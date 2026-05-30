@@ -13,7 +13,15 @@ let cached: CaseStore | undefined;
 export function getCaseStore(): CaseStore {
   if (cached) return cached;
   const mode = (process.env.SLAPROOF_STORE ?? "file").toLowerCase();
-  cached = mode === "postgres" ? createPostgresCaseStore() : fileCaseStore;
+  if (mode === "postgres") {
+    cached = createPostgresCaseStore();
+  } else if (mode === "file") {
+    cached = fileCaseStore;
+  } else {
+    throw new Error(
+      `Invalid SLAPROOF_STORE "${mode}": must be "file" or "postgres".`,
+    );
+  }
   return cached;
 }
 

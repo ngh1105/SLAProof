@@ -30,6 +30,13 @@ export function validateEnv(env: EnvSource = process.env): EnvValidationResult {
   }
 
   const storeMode = (env.SLAPROOF_STORE ?? "file").toLowerCase();
+  if (storeMode !== "file" && storeMode !== "postgres") {
+    issues.push({
+      key: "SLAPROOF_STORE",
+      reason: 'must be "file" or "postgres"',
+      level: "error",
+    });
+  }
   if (storeMode === "postgres") {
     requireString(
       env,

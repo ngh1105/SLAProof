@@ -91,4 +91,15 @@ describe("validateEnv Postgres mode", () => {
     const result = validateEnv({});
     expect(result.issues.some((i) => i.key === "DATABASE_URL")).toBe(false);
   });
+
+  it("rejects an unknown SLAPROOF_STORE value", () => {
+    const result = validateEnv({ SLAPROOF_STORE: "postgress" });
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((i) => i.key === "SLAPROOF_STORE")).toBe(true);
+  });
+
+  it("accepts SLAPROOF_STORE=file without complaint", () => {
+    const result = validateEnv({ SLAPROOF_STORE: "file" });
+    expect(result.issues.some((i) => i.key === "SLAPROOF_STORE")).toBe(false);
+  });
 });
