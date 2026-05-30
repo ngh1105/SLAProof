@@ -1,9 +1,9 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import fs from "node:fs";
-// The pure helpers are imported and tested directly. The main() tests below
-// drive the real control flow with the deferred db/store imports mocked, so no
-// real db, network, or snapshot file is ever touched. The mocked paths resolve
-// to the same files the script dynamically imports, so vitest intercepts them.
+import type { CaseStore } from "../../lib/storage/case-store-interface";
+// The main() tests below drive the real control flow with the deferred db/store
+// imports mocked, so no real db, network, or snapshot file is ever touched.
+// vitest matches these mocks to the script's own imports by resolved path.
 vi.mock("../../lib/storage/pg-backup.ts", () => ({
   restoreCases: vi.fn(async () => 0),
 }));
@@ -13,6 +13,8 @@ vi.mock("../../lib/storage/case-store-factory.ts", () => ({
 vi.mock("../../lib/storage/case-store-postgres.ts", () => ({
   closePool: vi.fn(async () => {}),
 }));
+import { restoreCases } from "../../lib/storage/pg-backup";
+import { getCaseStore } from "../../lib/storage/case-store-factory";
 // @ts-expect-error - db-restore.mjs is a plain ESM script with no .d.ts and allowJs is off, so TS cannot resolve its types; the exports are exercised at runtime by vitest.
 import { parsePath, shouldSkip, overwriteDecision, main, EXIT_BAD_ARGS, EXIT_OVERWRITE_GUARD } from "../../scripts/db-restore.mjs";
 
@@ -104,25 +106,21 @@ afterEach(() => {
 
 describe("main() overwrite guard (data-loss control)", () => {
   it("exits 3 and never mutates when the table is non-empty without --force", async () => {
-    const { restoreCases } = await import("../../lib/storage/pg-backup.ts");
-    const { getCaseStore } = await import(
-      "../../lib/storage/case-store-factory.ts"
-    );
     const save = vi.fn();
     vi.mocked(getCaseStore).mockReturnValue({
       list: vi.fn(async () => [{ id: "existing" }]),
       save,
       get: vi.fn(),
-    });
+    } as unknown as CaseStore);
     vi.spyOn(fs, "readFileSync").mockReturnValue(
       JSON.stringify({ rows: [{ id: "a" }] }),
     );
     vi.spyOn(console, "error").mockImplementation(() => {});
     const exitSpy = vi
       .spyOn(process, "exit")
-      .mockImplementation(((code) => {
+      .mockImplementation((code?: number | string | null) => {
         throw new Error(`__exit_${code}__`);
-      }) as never);
+      });
 
     await expect(
       main(["snap.json"], { SLAPROOF_STORE: "postgres" }),
@@ -133,15 +131,11 @@ describe("main() overwrite guard (data-loss control)", () => {
   });
 
   it("proceeds to restore when --force is given on a non-empty table", async () => {
-    const { restoreCases } = await import("../../lib/storage/pg-backup.ts");
-    const { getCaseStore } = await import(
-      "../../lib/storage/case-store-factory.ts"
-    );
     vi.mocked(getCaseStore).mockReturnValue({
       list: vi.fn(async () => [{ id: "existing" }]),
       save: vi.fn(),
       get: vi.fn(),
-    });
+    } as unknown as CaseStore);
     vi.mocked(restoreCases).mockResolvedValue(1);
     vi.spyOn(fs, "readFileSync").mockReturnValue(
       JSON.stringify({ rows: [{ id: "a" }] }),
