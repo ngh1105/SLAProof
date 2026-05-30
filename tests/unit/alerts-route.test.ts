@@ -4,8 +4,8 @@ import { increment, observe, resetMetrics } from "@/lib/observability/metrics";
 
 // Drive REAL metrics (no mocks) so the route exercises the same
 // snapshot() → evaluateAlerts() path it runs in production. Values are pushed
-// well past the default thresholds so the outcome is deterministic regardless
-// of any ALERT_* env overrides.
+// far past the default thresholds (and past any plausible ALERT_* override) so
+// the outcomes stay deterministic in CI, where env is unset.
 describe("/api/alerts", () => {
   beforeEach(() => resetMetrics());
   afterEach(() => resetMetrics());
@@ -45,8 +45,9 @@ describe("/api/alerts", () => {
   it("returns 200 + ok=false when only a warn alert is present", async () => {
     // High latency is a warn (non-fatal): slow but still serving correct
     // results. No error-rate or failed-read breaches → no critical alert.
+    // 600000ms (10 min) dwarfs any realistic ALERT_LATENCY_MS_MAX override.
     increment("case_create_ok", 100);
-    observe("case_create_ms", 9000);
+    observe("case_create_ms", 600000);
 
     const res = await alertsGet();
     const body = await res.json();
