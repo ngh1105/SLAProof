@@ -28,6 +28,7 @@
     "verify:demo": "npm run lint && npm run typecheck && npm test && npm run build",
     "readiness:check": "node scripts/readiness-check.mjs",
     "db:migrate": "node scripts/migrate.mjs",
+    "db:backup": "node scripts/db-backup.mjs",
     "db:seed": "node --import tsx scripts/seed.mjs"
   },
   "repository": {
