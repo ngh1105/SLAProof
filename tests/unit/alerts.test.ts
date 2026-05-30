@@ -1,0 +1,147 @@
+import { describe, it, expect } from "vitest";
+import type { MetricsSnapshot } from "@/lib/observability/metrics";
+import {
+  evaluateAlerts,
+  resolveThresholds,
+  type AlertThresholds,
+} from "@/lib/observability/alerts";
+
+// Helper: build a MetricsSnapshot with the real shape used by metrics.ts.
+function buildSnapshot(
+  counters: Record<string, number> = {},
+  histograms: Record<
+    string,
+    { count: number; sum: number; min: number; max: number; avg: number }
+  > = {},
+): MetricsSnapshot {
+  return {
+    counters,
+    histograms,
+    collectedAt: new Date("2026-05-30T00:00:00.000Z").toISOString(),
+  };
+}
+
+function hist(max: number, count = 1): {
+  count: number;
+  sum: number;
+  min: number;
+  max: number;
+  avg: number;
+} {
+  // For alerting we only read `max`; the rest is filled to keep the shape real.
+  return { count, sum: max, min: 0, max, avg: count === 0 ? 0 : max / count };
+}
+
+const LOW_THRESHOLDS: AlertThresholds = {
+  errorRateMax: 0.05,
+  latencyMsMax: 2000,
+  failedReadsMax: 5,
+};
+
+describe("evaluateAlerts", () => {
+  it("returns [] when every metric is under threshold", () => {
+    const snapshot = buildSnapshot(
+      { case_create_ok: 100, case_create_failed: 2, verifier_get_receipt_error: 1 },
+      { case_create_ms: hist(1500) },
+    );
+    expect(evaluateAlerts(snapshot, LOW_THRESHOLDS)).toEqual([]);
+  });
+
+  it("flags error rate above max as a single critical alert", () => {
+    // 10 failed / (90 ok + 10 failed) = 0.1 > 0.05
+    const snapshot = buildSnapshot({ case_create_ok: 90, case_create_failed: 10 });
+    const alerts = evaluateAlerts(snapshot, LOW_THRESHOLDS);
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toMatchObject({
+      key: "error_rate",
+      level: "critical",
+      value: 0.1,
+      threshold: 0.05,
+    });
+    expect(typeof alerts[0].message).toBe("string");
+  });
+
+  it("flags request latency max above threshold as a warn alert", () => {
+    const snapshot = buildSnapshot(
+      { case_create_ok: 100 },
+      { case_create_ms: hist(3500) },
+    );
+    const alerts = evaluateAlerts(snapshot, LOW_THRESHOLDS);
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toMatchObject({
+      key: "latency_ms",
+      level: "warn",
+      value: 3500,
+      threshold: 2000,
+    });
+  });
+
+  it("flags failed reads above threshold as a critical alert", () => {
+    const snapshot = buildSnapshot({
+      case_create_ok: 100,
+      verifier_get_receipt_error: 9,
+    });
+    const alerts = evaluateAlerts(snapshot, LOW_THRESHOLDS);
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toMatchObject({
+      key: "failed_reads",
+      level: "critical",
+      value: 9,
+      threshold: 5,
+    });
+  });
+
+  it("does not divide by zero or alert on error rate when there are no requests", () => {
+    const snapshot = buildSnapshot({}, {});
+    const alerts = evaluateAlerts(snapshot, LOW_THRESHOLDS);
+    expect(alerts).toEqual([]);
+    // Explicit: even with failures recorded but zero successes, rate stays finite.
+    const onlyFailures = buildSnapshot({ case_create_failed: 0 });
+    expect(evaluateAlerts(onlyFailures, LOW_THRESHOLDS)).toEqual([]);
+  });
+
+  it("can return multiple alerts at once", () => {
+    const snapshot = buildSnapshot(
+      { case_create_ok: 50, case_create_failed: 50, verifier_get_receipt_error: 20 },
+      { case_create_ms: hist(9000) },
+    );
+    const keys = evaluateAlerts(snapshot, LOW_THRESHOLDS).map((a) => a.key).sort();
+    expect(keys).toEqual(["error_rate", "failed_reads", "latency_ms"]);
+  });
+});
+
+describe("resolveThresholds", () => {
+  it("returns documented defaults when env is empty", () => {
+    expect(resolveThresholds({})).toEqual({
+      errorRateMax: 0.05,
+      latencyMsMax: 2000,
+      failedReadsMax: 5,
+    });
+  });
+
+  it("reads env overrides when present and numeric", () => {
+    const env = {
+      ALERT_ERROR_RATE_MAX: "0.2",
+      ALERT_LATENCY_MS_MAX: "500",
+      ALERT_FAILED_READS_MAX: "10",
+    };
+    expect(resolveThresholds(env)).toEqual({
+      errorRateMax: 0.2,
+      latencyMsMax: 500,
+      failedReadsMax: 10,
+    });
+  });
+
+  it("falls back to defaults on NaN or empty values", () => {
+    const env = {
+      ALERT_ERROR_RATE_MAX: "not-a-number",
+      ALERT_LATENCY_MS_MAX: "",
+      ALERT_FAILED_READS_MAX: "   ",
+    };
+    expect(resolveThresholds(env)).toEqual({
+      errorRateMax: 0.05,
+      latencyMsMax: 2000,
+      failedReadsMax: 5,
+    });
+  });
+});
