@@ -140,7 +140,7 @@ Before public production:
   guidance documented).
 - ✅ Establish monitoring and alerting (`/api/metrics`, `/api/alerts`,
   threshold env vars, and on-call rota template documented).
-- ✅ Establish support and incident response (runbooks + alerting on-call rota
+- 🟡 Establish support and incident response (runbooks + alerting on-call rota
   template documented; named staffing to be filled before public launch).
 - ✅ Establish data retention and deletion policy.
 
