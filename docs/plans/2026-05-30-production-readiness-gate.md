@@ -17,7 +17,7 @@ Conventions:
 
 ## Workstream A — Postgres operations
 
-### Task A1 — `dumpCases` / `loadCases` library helpers
+### Task A1 — `dumpCases` / `restoreCases` library helpers
 
 Goal: pure, testable backup/restore core decoupled from the CLI.
 
