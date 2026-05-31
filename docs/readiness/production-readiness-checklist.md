@@ -130,11 +130,14 @@ Before a real pilot:
 Before public production:
 
 - 🟡 Complete security review (prep package complete in
-  `docs/security/external-security-review-prep.md`; awaiting external vendor).
+  `docs/security/external-security-review-prep.md`; send-ready vendor handoff
+  bundle in `docs/security/vendor-handoff-package.md` (Track A); awaiting
+  external vendor).
 - ✅ Complete threat model (production-scope threat model complete in
   `docs/security/threat-model-production.md`; residual risks tracked).
 - 🟡 Complete contract audit or focused review (prep package complete in
-  `docs/security/contract-review-prep.md`; awaiting vendor).
+  `docs/security/contract-review-prep.md`; send-ready vendor handoff bundle in
+  `docs/security/vendor-handoff-package.md` (Track B); awaiting vendor).
 - ✅ Establish backup and restore (file-level scripts + Postgres logical
   `db:backup` / `db:restore` scripts; managed provider PITR / `pg_dump`
   guidance documented).
