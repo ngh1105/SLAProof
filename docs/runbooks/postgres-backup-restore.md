@@ -79,6 +79,13 @@ Exit codes:
 | 2 | Missing snapshot path. |
 | 3 | Non-empty table blocked restore without `--force`. |
 
+> **Restore is not atomic.** Rows are replayed one at a time through
+> `CaseStore.save()`; the store interface exposes no multi-statement
+> transaction. If a restore fails partway through (especially after a `--force`
+> overwrite) the table can be left partially restored. Prefer restoring into an
+> empty table. If a `--force` restore fails mid-run, re-run it against the same
+> snapshot to converge (saves are idempotent upserts keyed by case `id`).
+
 ## Managed Provider Backups
 
 Logical snapshots are useful for app-level portability and rehearsed restores,

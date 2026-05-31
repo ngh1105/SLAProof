@@ -44,6 +44,27 @@ export async function restoreCases(
     throw new Error("restoreCases: snapshot.rows must be an array");
   }
 
+  // Validate every row up front so a garbled snapshot fails loudly *before* any
+  // write, instead of half-restoring and surfacing a cryptic driver error
+  // partway through the loop.
+  snapshot.rows.forEach((row, i) => {
+    if (
+      !row ||
+      typeof row !== "object" ||
+      typeof (row as SlaCase).id !== "string"
+    ) {
+      throw new Error(
+        `restoreCases: snapshot.rows[${i}] is not a valid case ` +
+          "(expected an object with a string id)",
+      );
+    }
+  });
+
+  // NOTE: restore is NOT transactional. Rows are upserted one at a time through
+  // the CaseStore interface, which exposes no multi-statement transaction
+  // primitive. A failure partway through (especially after a --force overwrite)
+  // can leave the table partially restored. The restore-into-empty path is the
+  // supported flow; see docs/runbooks/postgres-backup-restore.md.
   for (const slaCase of snapshot.rows) {
     await store.save(slaCase);
   }

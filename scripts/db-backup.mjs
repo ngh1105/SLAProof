@@ -51,12 +51,13 @@ export function shouldSkip(env = process.env) {
 }
 
 /**
- * Build the snapshot filename for a given date, mirroring backup-data.mjs's
- * stamp format: ISO with `:`/`.` flattened to `-`, trimmed to seconds + "Z".
- * e.g. slaproof-pg-2026-05-30T09-24-05Z.json
+ * Build the snapshot filename for a given date: ISO with `:`/`.` flattened to
+ * `-`, kept to millisecond resolution + "Z" so two backups in the same second
+ * cannot collide/overwrite. The format still sorts chronologically as a string.
+ * e.g. slaproof-pg-2026-05-30T09-24-05-123Z.json
  */
 export function backupFilename(date = new Date()) {
-  const stamp = date.toISOString().replace(/[:.]/g, "-").slice(0, 19) + "Z";
+  const stamp = date.toISOString().replace(/[:.]/g, "-").slice(0, 23) + "Z";
   return `${PREFIX}${stamp}${SUFFIX}`;
 }
 

@@ -110,4 +110,17 @@ describe("restoreCases", () => {
     } as unknown as BackupSnapshot;
     await expect(restoreCases(store, bad)).rejects.toThrow();
   });
+
+  it("rejects with the row index when a row is not a valid case, before any save", async () => {
+    const store = createFakeStore();
+    const bad = {
+      takenAt: "x",
+      store: "postgres",
+      count: 2,
+      rows: [makeCase("case-a"), { nope: true }],
+    } as unknown as BackupSnapshot;
+    await expect(restoreCases(store, bad)).rejects.toThrow(/rows\[1\]/);
+    // validation runs up front, so nothing should have been persisted
+    expect(await store.list()).toEqual([]);
+  });
 });

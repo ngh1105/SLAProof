@@ -106,9 +106,15 @@ describe("prune", () => {
 });
 
 describe("backupFilename", () => {
-  it("builds a slaproof-pg-<stamp>.json name from a date", () => {
+  it("builds a slaproof-pg-<stamp>.json name from a date (ms resolution)", () => {
     const name = backupFilename(new Date("2026-05-30T09:24:05.123Z"));
-    expect(name).toBe("slaproof-pg-2026-05-30T09-24-05Z.json");
+    expect(name).toBe("slaproof-pg-2026-05-30T09-24-05-123Z.json");
+  });
+
+  it("does not collide for two dates in the same second", () => {
+    const a = backupFilename(new Date("2026-05-30T09:24:05.001Z"));
+    const b = backupFilename(new Date("2026-05-30T09:24:05.999Z"));
+    expect(a).not.toBe(b);
   });
 
   it("always matches the expected pattern", () => {
