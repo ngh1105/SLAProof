@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Postgres `cases` logical restore script.
 //
 // Replays a JSON snapshot (produced by scripts/db-backup.mjs) back into the

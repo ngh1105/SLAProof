@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Postgres `cases` logical backup script.
 //
 // Exports every row of the Postgres-backed case store to a timestamped JSON
