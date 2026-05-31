@@ -13,7 +13,7 @@ import {
   type VerifierReadiness,
   type VerifyResult,
 } from "@/lib/verifier/types";
-import { increment, observe } from "@/lib/observability/metrics";
+import { increment, observe, bumpStreak, resetStreak } from "@/lib/observability/metrics";
 import { reportError } from "@/lib/observability/error-reporter";
 import { ExecutionResult, TransactionStatus } from "genlayer-js/types";
 
@@ -377,9 +377,13 @@ export function createGenLayerVerifier(
         const result = await readReceipt(caseId, readiness, readClientFactory);
         increment(result ? "verifier_get_receipt_ok" : "verifier_get_receipt_missing");
         observe("verifier_get_receipt_ms", Date.now() - startMs);
+        // A successful read means the RPC path is healthy *now*; clear the
+        // consecutive-failure streak so the failed_reads alert self-heals.
+        resetStreak("verifier_get_receipt_error_streak");
         return result;
       } catch (err) {
         increment("verifier_get_receipt_error");
+        bumpStreak("verifier_get_receipt_error_streak");
         throw err;
       }
     },

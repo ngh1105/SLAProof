@@ -13,10 +13,12 @@ function buildSnapshot(
     string,
     { count: number; sum: number; min: number; max: number; avg: number }
   > = {},
+  streaks: Record<string, number> = {},
 ): MetricsSnapshot {
   return {
     counters,
     histograms,
+    streaks,
     collectedAt: new Date("2026-05-30T00:00:00.000Z").toISOString(),
   };
 }
@@ -41,8 +43,9 @@ const LOW_THRESHOLDS: AlertThresholds = {
 describe("evaluateAlerts", () => {
   it("returns [] when every metric is under threshold", () => {
     const snapshot = buildSnapshot(
-      { case_create_ok: 100, case_create_failed: 2, verifier_get_receipt_error: 1 },
+      { case_create_ok: 100, case_create_failed: 2 },
       { case_create_ms: hist(1500) },
+      { verifier_get_receipt_error_streak: 1 },
     );
     expect(evaluateAlerts(snapshot, LOW_THRESHOLDS)).toEqual([]);
   });
@@ -76,11 +79,12 @@ describe("evaluateAlerts", () => {
     });
   });
 
-  it("flags failed reads above threshold as a critical alert", () => {
-    const snapshot = buildSnapshot({
-      case_create_ok: 100,
-      verifier_get_receipt_error: 9,
-    });
+  it("flags consecutive failed reads above threshold as a critical alert", () => {
+    const snapshot = buildSnapshot(
+      { case_create_ok: 100 },
+      {},
+      { verifier_get_receipt_error_streak: 9 },
+    );
     const alerts = evaluateAlerts(snapshot, LOW_THRESHOLDS);
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toMatchObject({
@@ -89,6 +93,17 @@ describe("evaluateAlerts", () => {
       value: 9,
       threshold: 5,
     });
+  });
+
+  it("does NOT flag failed reads when the streak has reset (self-heal after recovery)", () => {
+    // Lifetime errors were high, but a recent successful read reset the streak
+    // to 0 — the alert must reflect current health, not lifetime totals.
+    const snapshot = buildSnapshot(
+      { case_create_ok: 100, verifier_get_receipt_error: 50 },
+      {},
+      { verifier_get_receipt_error_streak: 0 },
+    );
+    expect(evaluateAlerts(snapshot, LOW_THRESHOLDS)).toEqual([]);
   });
 
   it("does not divide by zero or alert on error rate when there are no requests", () => {
@@ -115,8 +130,9 @@ describe("evaluateAlerts", () => {
 
   it("can return multiple alerts at once", () => {
     const snapshot = buildSnapshot(
-      { case_create_ok: 50, case_create_failed: 50, verifier_get_receipt_error: 20 },
+      { case_create_ok: 50, case_create_failed: 50 },
       { case_create_ms: hist(9000) },
+      { verifier_get_receipt_error_streak: 20 },
     );
     const keys = evaluateAlerts(snapshot, LOW_THRESHOLDS).map((a) => a.key).sort();
     expect(keys).toEqual(["case_create_error_rate", "failed_reads", "latency_ms"]);

@@ -12,8 +12,12 @@
 //     denominator is 0 the rate is 0 (no divide-by-zero, never NaN).
 //   - Request latency histogram: `case_create_ms` (observe(...) in
 //     app/cases/new/actions.ts). We alert on its `max`.
-//   - Failed contract/receipt reads: `verifier_get_receipt_error` counter
-//     (lib/verifier/genlayer-adapter.ts, the catch branch of getReceipt()).
+//   - Failed contract/receipt reads: consecutive-failure streak
+//     `verifier_get_receipt_error_streak` (snapshot.streaks). It increments in
+//     the catch branch of getReceipt() and RESETS to 0 on the next successful
+//     read, so the alert reflects whether reads are failing *right now* and
+//     self-heals once the RPC recovers — rather than a lifetime total that
+//     would latch 503 until the next redeploy.
 //
 // Level choice (documented per spec): error-rate and failed-read breaches are
 // "critical" — they mean users are getting errors / receipts can't be read,
@@ -42,7 +46,7 @@ export type AlertThresholds = {
 const REQUEST_OK_KEY = "case_create_ok";
 const REQUEST_FAILED_KEY = "case_create_failed";
 const LATENCY_HISTOGRAM_KEY = "case_create_ms";
-const FAILED_READS_KEY = "verifier_get_receipt_error";
+const FAILED_READS_STREAK_KEY = "verifier_get_receipt_error_streak";
 
 const DEFAULT_THRESHOLDS: AlertThresholds = {
   errorRateMax: 0.05,
@@ -115,8 +119,9 @@ export function evaluateAlerts(
     });
   }
 
-  // Failed contract/receipt reads since boot.
-  const failedReads = snapshot.counters[FAILED_READS_KEY] ?? 0;
+  // Consecutive failed receipt reads. Resets to 0 on any successful read, so a
+  // recovered RPC clears this alert without waiting for a redeploy.
+  const failedReads = snapshot.streaks[FAILED_READS_STREAK_KEY] ?? 0;
   if (failedReads > thresholds.failedReadsMax) {
     alerts.push({
       key: "failed_reads",
@@ -124,7 +129,7 @@ export function evaluateAlerts(
       value: failedReads,
       threshold: thresholds.failedReadsMax,
       message:
-        `Failed receipt reads ${failedReads} exceeds max ` +
+        `Consecutive failed receipt reads ${failedReads} exceeds max ` +
         `${thresholds.failedReadsMax}.`,
     });
   }

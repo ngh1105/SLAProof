@@ -24,10 +24,18 @@ Rules live in `lib/observability/alerts.ts`.
 |---|---:|---|---|
 | `case_create_error_rate` | `0.05` (5%) | critical | `case_create_failed / (case_create_ok + case_create_failed)` |
 | `latency_ms` | `2000` ms | warn | max of `case_create_ms` histogram |
-| `failed_reads` | `5` | critical | `verifier_get_receipt_error` counter |
+| `failed_reads` | `5` | critical | consecutive `verifier_get_receipt_error` (resets on success) |
 
 A value must be strictly greater than its threshold to alert. Zero case-create
 requests produce an error rate of `0`, never `NaN`.
+
+Alerts reflect *current* health, not lifetime totals, so the endpoint is safe to
+poll continuously: `failed_reads` counts **consecutive** failed receipt reads and
+resets to `0` on the next successful read, so a recovered RPC clears the 503
+without waiting for a redeploy. (`case_create_error_rate` is a ratio over all
+case-create requests; `latency_ms` is the histogram max — both still accumulate
+over the process lifetime, which is acceptable for a warn-level/ratio signal in
+the pilot.)
 
 ## Threshold Environment Variables
 
