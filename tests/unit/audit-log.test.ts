@@ -1,10 +1,16 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { appendAudit, readAudit } from "@/lib/audit/audit-log";
 
-const TMP_DIR = path.join(process.cwd(), ".data");
-const TMP_AUDIT = path.join(TMP_DIR, "audit.log.jsonl");
+// Unique per-file temp audit log so parallel Vitest workers don't race on the
+// shared .data/audit.log.jsonl; see audit-api.test.ts for rationale.
+const TMP_AUDIT = path.join(
+  os.tmpdir(),
+  `slaproof-audit-log-${process.pid}.log.jsonl`,
+);
+process.env.SLAPROOF_AUDIT_PATH = TMP_AUDIT;
 
 describe("audit-log", () => {
   beforeEach(() => {
