@@ -4,8 +4,16 @@ import { redactDetails } from "@/lib/observability/redact";
 
 export { redactDetails };
 
-const AUDIT_DIR = path.join(process.cwd(), ".data");
-const AUDIT_PATH = path.join(AUDIT_DIR, "audit.log.jsonl");
+const DEFAULT_AUDIT_DIR = path.join(process.cwd(), ".data");
+const DEFAULT_AUDIT_PATH = path.join(DEFAULT_AUDIT_DIR, "audit.log.jsonl");
+
+// Resolve the audit log path lazily on every call so tests can isolate their
+// writes via SLAPROOF_AUDIT_PATH (a per-worker temp file) instead of racing on
+// the single shared .data/audit.log.jsonl under Vitest's parallel workers.
+// Production leaves the env unset → identical default behavior.
+function auditFilePath(): string {
+  return process.env.SLAPROOF_AUDIT_PATH ?? DEFAULT_AUDIT_PATH;
+}
 
 export type AuditAction =
   | "case_created"
@@ -23,11 +31,13 @@ export type AuditEntry = {
 };
 
 function ensureAuditFile(): void {
-  if (!fs.existsSync(AUDIT_DIR)) {
-    fs.mkdirSync(AUDIT_DIR, { recursive: true });
+  const file = auditFilePath();
+  const dir = path.dirname(file);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   }
-  if (!fs.existsSync(AUDIT_PATH)) {
-    fs.writeFileSync(AUDIT_PATH, "", "utf-8");
+  if (!fs.existsSync(file)) {
+    fs.writeFileSync(file, "", "utf-8");
   }
 }
 
@@ -38,12 +48,12 @@ export function appendAudit(entry: Omit<AuditEntry, "timestamp">): void {
     ...entry,
     details: redactDetails(entry.details),
   };
-  fs.appendFileSync(AUDIT_PATH, `${JSON.stringify(full)}\n`, "utf-8");
+  fs.appendFileSync(auditFilePath(), `${JSON.stringify(full)}\n`, "utf-8");
 }
 
 export function readAudit(filter?: { caseId?: string }): AuditEntry[] {
   ensureAuditFile();
-  const raw = fs.readFileSync(AUDIT_PATH, "utf-8");
+  const raw = fs.readFileSync(auditFilePath(), "utf-8");
   const lines = raw.split("\n").filter((l) => l.trim() !== "");
   const entries: AuditEntry[] = [];
   for (const line of lines) {
@@ -59,5 +69,5 @@ export function readAudit(filter?: { caseId?: string }): AuditEntry[] {
 }
 
 export function auditPath(): string {
-  return AUDIT_PATH;
+  return auditFilePath();
 }

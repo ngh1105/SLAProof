@@ -1,11 +1,19 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { NextRequest } from "next/server";
 import { GET as auditGet } from "@/app/api/audit/route";
 import { appendAudit } from "@/lib/audit/audit-log";
 
-const TMP_AUDIT = path.join(process.cwd(), ".data", "audit.log.jsonl");
+// Isolate this suite's audit log to a unique temp file so it can't race the
+// shared .data/audit.log.jsonl with other test files under Vitest's parallel
+// workers. The audit module resolves SLAPROOF_AUDIT_PATH lazily per call.
+const TMP_AUDIT = path.join(
+  os.tmpdir(),
+  `slaproof-audit-api-${process.pid}.log.jsonl`,
+);
+process.env.SLAPROOF_AUDIT_PATH = TMP_AUDIT;
 
 function buildRequest(url: string): NextRequest {
   return new Request(url) as unknown as NextRequest;

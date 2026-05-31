@@ -2,7 +2,7 @@
 
 Status legend: ✅ done · 🟡 partial · 🔴 not started
 
-Last reviewed: 2026-05-28
+Last reviewed: 2026-05-30
 
 ## Product Claims
 
@@ -80,12 +80,16 @@ Last reviewed: 2026-05-28
 - ✅ Production deploy runbook exists (Docker + GenLayer deploy runbooks).
 - ✅ Rollback process exists (contract upgrade policy + incident runbook).
 - ✅ Database backup and restore process exists (`npm run data:backup` /
-  `data:restore`; pilot scope only — production needs managed DB).
+  `data:restore` for file-store pilot data; `npm run db:backup` /
+  `db:restore` for Postgres logical snapshots; provider PITR / `pg_dump`
+  guidance in `docs/runbooks/postgres-backup-restore.md`).
 - ✅ Incident response contact is defined.
 - ✅ Manual case recovery process exists (data retention policy).
 - ✅ GenLayer RPC outage fallback is documented.
 - ✅ Multi-stage Dockerfile + docker-compose.
-- ✅ External health monitor + ops report scripts.
+- ✅ External health monitor + ops report scripts + alerting runbook
+  (`/api/alerts`, threshold env vars, and on-call rota template in
+  `docs/runbooks/alerting.md`).
 - ✅ x-request-id header for log correlation.
 
 ## Observability
@@ -98,17 +102,18 @@ Last reviewed: 2026-05-28
 - ✅ Track receipt read success.
 - ✅ Track receipt read failure.
 - ✅ Track export generated (export_receipt_json / _markdown counters).
-- 🟡 Monitor error rate, latency, and failed contract reads (metrics exist
-  via `/api/metrics`; no external alerting wired).
+- ✅ Monitor error rate, latency, and failed contract reads (`/api/metrics` +
+  `/api/alerts`; critical alerts return 503 and can route through
+  `reportError` / `ERROR_WEBHOOK_URL`).
 - ✅ Operator-facing dashboard at `/ops` showing readiness + counters.
-- ✅ `/api/health`, `/api/metrics`, `/api/version`, `/api/audit` endpoints.
+- ✅ `/api/health`, `/api/metrics`, `/api/alerts`, `/api/version`, `/api/audit` endpoints.
 
 ## Pilot Gate
 
 Before a real pilot:
 
-- 🟡 Use a managed database (file-backed JSON with CaseStore interface ready
-  for swap; pilot can run on file store with backups).
+- ✅ Use a managed database (Postgres CaseStore via `SLAPROOF_STORE=postgres`
+  and `DATABASE_URL`; file store remains default for local/demo mode).
 - ✅ Protect workspace access.
 - ✅ Provide evidence redaction guidance.
 - ✅ Run at least three realistic incident cases.
@@ -124,14 +129,22 @@ Before a real pilot:
 
 Before public production:
 
-- 🔴 Complete security review (external).
-- 🟡 Complete threat model (pilot scope ✅; production scope pending).
-- 🔴 Complete contract audit or focused review.
-- 🟡 Establish backup and restore (file-level scripts ✅; managed DB pending).
-- 🟡 Establish monitoring and alerting (metrics + dashboard ✅; alerting and
-  on-call rota not formalized).
-- 🟡 Establish support and incident response (runbook ✅; on-call rota not
-  formalized).
+- 🟡 Complete security review (prep package complete in
+  `docs/security/external-security-review-prep.md`; send-ready vendor handoff
+  bundle in `docs/security/vendor-handoff-package.md` (Track A); awaiting
+  external vendor).
+- ✅ Complete threat model (production-scope threat model complete in
+  `docs/security/threat-model-production.md`; residual risks tracked).
+- 🟡 Complete contract audit or focused review (prep package complete in
+  `docs/security/contract-review-prep.md`; send-ready vendor handoff bundle in
+  `docs/security/vendor-handoff-package.md` (Track B); awaiting vendor).
+- ✅ Establish backup and restore (file-level scripts + Postgres logical
+  `db:backup` / `db:restore` scripts; managed provider PITR / `pg_dump`
+  guidance documented).
+- ✅ Establish monitoring and alerting (`/api/metrics`, `/api/alerts`,
+  threshold env vars, and on-call rota template documented).
+- 🟡 Establish support and incident response (runbooks + alerting on-call rota
+  template documented; named staffing to be filled before public launch).
 - ✅ Establish data retention and deletion policy.
 
 ## Project Hygiene
